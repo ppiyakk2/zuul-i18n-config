@@ -1,5 +1,8 @@
 - project:
     name: <your-org>/contributor-guide
+    check:
+      jobs:
+        - noop
     post:
       jobs:
         - upstream-translation-update
