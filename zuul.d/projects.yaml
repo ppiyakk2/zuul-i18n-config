@@ -1,0 +1,8 @@
+- project:
+    name: ppiyakk2/contributor-guide
+    post:
+      jobs:
+        - upstream-translation-update
+    periodic:
+      jobs:
+        - propose-translation-update

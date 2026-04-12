@@ -1,0 +1,41 @@
+# Sphinx 문서 프로젝트에서 POT 파일을 추출하는 role
+# contributor-guide 같은 Sphinx 기반 i18n 프로젝트 대상
+
+- name: Set project source directory
+  set_fact:
+    project_src: "{{ zuul.project.src_dir }}"
+
+- name: Install build dependencies
+  pip:
+    name:
+      - sphinx
+      - openstackdocstheme
+      - sphinx-intl
+    executable: pip3
+  become: true
+
+- name: Extract POT files via sphinx-build
+  shell: |
+    cd {{ project_src }}
+    sphinx-build -b gettext doc/source doc/source/locale/pot/
+  args:
+    chdir: "{{ project_src }}"
+  register: sphinx_build_result
+
+- name: Show sphinx-build output
+  debug:
+    msg: "{{ sphinx_build_result.stdout_lines }}"
+
+- name: Find extracted POT files
+  find:
+    paths: "{{ project_src }}/doc/source/locale/pot"
+    patterns: "*.pot"
+  register: pot_files
+
+- name: Show POT files
+  debug:
+    msg: "Extracted {{ pot_files.files | length }} POT files: {{ pot_files.files | map(attribute='path') | map('basename') | list }}"
+
+- name: Set pot_dir fact
+  set_fact:
+    pot_dir: "{{ project_src }}/doc/source/locale/pot"

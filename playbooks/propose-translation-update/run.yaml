@@ -1,0 +1,13 @@
+- hosts: controller
+  tasks:
+    - name: Show project info
+      debug:
+        msg: "Proposing translation update for {{ zuul.project.short_name }}"
+
+    - name: Download translations from Weblate
+      include_role:
+        name: download-from-weblate
+
+    - name: Propose translation update PR
+      include_role:
+        name: propose-weblate-update
