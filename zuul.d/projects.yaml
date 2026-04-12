@@ -1,0 +1,8 @@
+- project:
+    name: <your-org>/contributor-guide
+    post:
+      jobs:
+        - upstream-translation-update
+    periodic:
+      jobs:
+        - propose-translation-update

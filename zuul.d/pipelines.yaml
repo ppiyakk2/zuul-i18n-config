@@ -1,0 +1,60 @@
+- pipeline:
+    name: check
+    description: Runs jobs on open pull requests.
+    manager: independent
+    trigger:
+      github.com:
+        - event: pull_request
+          action:
+            - opened
+            - changed
+            - reopened
+        - event: pull_request
+          action: comment
+          comment: (?i)^\s*recheck\s*$
+    start:
+      github.com:
+        check: in_progress
+        comment: false
+    success:
+      github.com:
+        check: success
+        comment: false
+    failure:
+      github.com:
+        check: failure
+
+- pipeline:
+    name: post
+    description: |
+      Runs after a change is merged to master.
+      Used to push updated POT files to Weblate.
+    manager: supercedent
+    post-review: true
+    trigger:
+      github.com:
+        - event: push
+          ref: ^refs/heads/master$
+    success:
+      github.com:
+        comment: false
+    failure:
+      github.com:
+        comment: false
+
+- pipeline:
+    name: periodic
+    description: |
+      Runs daily at UTC 02:00.
+      Used to pull translations from Weblate and propose PRs.
+    manager: independent
+    post-review: true
+    trigger:
+      timer:
+        - time: '0 2 * * *'
+    success:
+      github.com:
+        comment: false
+    failure:
+      github.com:
+        comment: false

@@ -1,0 +1,24 @@
+- job:
+    name: base
+    parent: null
+    description: Base job.
+    nodeset:
+      nodes:
+        - name: controller
+          label: ubuntu-jammy
+
+- job:
+    name: upstream-translation-update
+    parent: base
+    description: |
+      Extract POT files from project and upload to Weblate.
+      Triggered on every merge to master.
+    run: playbooks/upstream-translation-update/run.yaml
+
+- job:
+    name: propose-translation-update
+    parent: base
+    description: |
+      Download translations from Weblate and propose a PR
+      to the project repository.
+    run: playbooks/propose-translation-update/run.yaml

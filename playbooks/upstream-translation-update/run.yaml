@@ -1,0 +1,13 @@
+- hosts: controller
+  tasks:
+    - name: Show project info
+      debug:
+        msg: "Processing {{ zuul.project.short_name }} on branch {{ zuul.branch }}"
+
+    - name: Extract POT files
+      include_role:
+        name: extract-pot-files
+
+    - name: Upload POT files to Weblate
+      include_role:
+        name: upload-to-weblate

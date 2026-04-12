@@ -1,0 +1,60 @@
+# Weblate에서 번역 파일(.po)을 다운로드하는 role
+
+- name: Check required variables
+  fail:
+    msg: "weblate_url and weblate_token must be defined"
+  when: weblate_url is not defined or weblate_token is not defined
+
+- name: Install wlc
+  pip:
+    name: wlc
+    executable: pip3
+  become: true
+
+- name: Configure wlc
+  copy:
+    dest: "{{ ansible_env.HOME }}/.config/weblate"
+    content: |
+      [weblate]
+      url = {{ weblate_url }}/api/
+      key = {{ weblate_token }}
+    mode: '0600'
+
+- name: Set project source directory
+  set_fact:
+    project_src: "{{ zuul.project.src_dir }}"
+    locale_dir: "{{ zuul.project.src_dir }}/doc/source/locale"
+
+- name: List Weblate components for project
+  uri:
+    url: "{{ weblate_url }}/api/projects/{{ weblate_project }}/components/"
+    method: GET
+    headers:
+      Authorization: "Token {{ weblate_token }}"
+    return_content: true
+  register: weblate_components
+
+- name: Show components
+  debug:
+    msg: "Found {{ (weblate_components.json.results | length) }} components in Weblate"
+
+- name: Download translations for each component
+  uri:
+    url: "{{ weblate_url }}/api/components/{{ weblate_project }}/{{ item.slug }}/file/"
+    method: GET
+    headers:
+      Authorization: "Token {{ weblate_token }}"
+    dest: "/tmp/weblate_translations/{{ item.slug }}.zip"
+    status_code: [200]
+  loop: "{{ weblate_components.json.results }}"
+  when: weblate_components.json is defined
+
+- name: Show downloaded translation files
+  find:
+    paths: /tmp/weblate_translations
+    patterns: "*.zip"
+  register: downloaded_files
+
+- name: Debug downloaded files
+  debug:
+    msg: "Downloaded {{ downloaded_files.files | length }} translation archives"
