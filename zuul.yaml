@@ -1,0 +1,23 @@
+- pipeline:
+    name: check
+    manager: independent
+    trigger:
+      github.com:
+        - event: pull_request
+          action:
+            - opened
+    success:
+      github.com:
+        check: success
+    failure:
+      github.com:
+        check: failure
+
+- job:
+    name: test-i18n-job
+    parent: null
+    nodeset:
+      nodes:
+        - name: controller
+          label: ubuntu-jammy
+    run: playbooks/upstream-translation-update/run.yaml
