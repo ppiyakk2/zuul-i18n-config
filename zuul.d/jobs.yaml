@@ -3,9 +3,7 @@
     parent: null
     description: Base job.
     nodeset:
-      nodes:
-        - name: controller
-          label: ubuntu-jammy
+      nodes: []
 
 - job:
     name: upstream-translation-update

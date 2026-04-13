@@ -1,8 +1,8 @@
 # 번역 파일 변경사항을 감지하고 GitHub PR을 제안하는 role
+# project_src: play-level 변수에서 제공 (propose-translation-update/run.yaml)
 
-- name: Set facts
+- name: Set branch name
   set_fact:
-    project_src: "{{ zuul.project.src_dir }}"
     branch_name: "translate/weblate-update-{{ ansible_date_time.date }}"
 
 - name: Configure git
