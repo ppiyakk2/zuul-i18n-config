@@ -7,15 +7,76 @@
       debug:
         msg: "Proposing translation update for {{ zuul.project.short_name }}"
 
+    # --- Prepare Weblate client ---
     - name: Prepare Weblate client
       include_role:
         name: prepare-weblate-client
       when: weblate_url is defined and weblate_token is defined
 
+    # --- Download translations from Weblate ---
     - name: Download translations from Weblate
-      include_role:
-        name: download-from-weblate
+      command: >
+        wlc download
+        --output {{ project_src }}/doc/source/locale/
+        {{ weblate_component }}
+      when:
+        - weblate_url is defined
+        - weblate_token is defined
+        - weblate_component is defined
 
-    - name: Propose translation update PR
-      include_role:
-        name: propose-weblate-update
+    - name: Skip Weblate download (not configured)
+      debug:
+        msg: "Weblate download skipped: weblate_url/weblate_token not configured."
+      when: weblate_url is not defined or weblate_token is not defined
+
+    # --- Propose translation update PR ---
+    - name: Set branch name
+      set_fact:
+        branch_name: "translate/weblate-update-{{ ansible_date_time.date }}"
+
+    - name: Configure git
+      shell: |
+        git config user.email "i18n@openstack.org"
+        git config user.name "OpenStack I18n Bot"
+      args:
+        chdir: "{{ project_src }}"
+
+    - name: Check for translation changes
+      shell: |
+        git -C {{ project_src }} status --porcelain doc/source/locale/
+      register: git_status
+
+    - name: Show git status
+      debug:
+        msg: "Changed files:\n{{ git_status.stdout }}"
+
+    - name: Skip if no changes
+      meta: end_play
+      when: git_status.stdout == ""
+
+    - name: Create update branch
+      shell: git checkout -b {{ branch_name }}
+      args:
+        chdir: "{{ project_src }}"
+
+    - name: Stage translation changes
+      shell: git add doc/source/locale/
+      args:
+        chdir: "{{ project_src }}"
+
+    - name: Commit translation update
+      shell: |
+        git commit -m "Imported translations from Weblate
+
+        Translation update from Weblate translation platform.
+        "
+      args:
+        chdir: "{{ project_src }}"
+
+    - name: Push branch and create PR (placeholder)
+      debug:
+        msg: |
+          Would push branch {{ branch_name }} and create PR.
+          In production, use GitHub CLI or API with proper credentials.
+          Files changed:
+          {{ git_status.stdout }}
