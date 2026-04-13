@@ -7,6 +7,14 @@
       debug:
         msg: "Processing {{ zuul.project.short_name }} on branch {{ zuul.branch }}"
 
+    # --- Debug: check what variables are available ---
+    - name: Debug weblate vars availability
+      debug:
+        msg:
+          - "weblate_url defined: {{ weblate_url is defined }}"
+          - "weblate_token defined: {{ weblate_token is defined }}"
+          - "weblate_api_credentials defined: {{ weblate_api_credentials is defined }}"
+
     # --- Prepare Weblate client ---
     - name: Prepare Weblate client
       include_role:
