@@ -16,27 +16,6 @@
         weblate_token: "{{ weblate_api_credentials.token }}"
       when: weblate_api_credentials is defined
 
-    - name: Verify weblate config file exists
-      stat:
-        path: "{{ ansible_user_dir }}/.config/weblate"
-      register: weblate_config_stat
-      when: weblate_api_credentials is defined
-
-    - name: Show weblate config file status
-      debug:
-        msg: "weblate config: {{ ansible_user_dir }}/.config/weblate exists={{ weblate_config_stat.stat.exists }}"
-      when: weblate_api_credentials is defined
-
-    - name: Show weblate config url line
-      command: grep "^url" {{ ansible_user_dir }}/.config/weblate
-      register: weblate_config_url
-      when: weblate_api_credentials is defined
-
-    - name: Print weblate config url line
-      debug:
-        msg: "{{ weblate_config_url.stdout }}"
-      when: weblate_api_credentials is defined
-
     # --- Extract POT files ---
     - name: Install build dependencies
       pip:
@@ -73,9 +52,8 @@
       command: >
         wlc upload
         --overwrite
-        --language en
         --input {{ item.path }}
-        {{ weblate_component }}
+        {{ weblate_component }}/en
       loop: "{{ pot_files.files }}"
       loop_control:
         label: "{{ item.path | basename }}"
