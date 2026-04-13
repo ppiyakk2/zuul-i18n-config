@@ -7,15 +7,60 @@
       debug:
         msg: "Processing {{ zuul.project.short_name }} on branch {{ zuul.branch }}"
 
+    # --- Prepare Weblate client ---
     - name: Prepare Weblate client
       include_role:
         name: prepare-weblate-client
       when: weblate_url is defined and weblate_token is defined
 
-    - name: Extract POT files
-      include_role:
-        name: extract-pot-files
+    # --- Extract POT files ---
+    - name: Install build dependencies
+      pip:
+        name:
+          - sphinx
+          - openstackdocstheme
+          - sphinx-intl
+        executable: pip3
+      become: true
 
-    - name: Upload POT files to Weblate
-      include_role:
-        name: upload-to-weblate
+    - name: Extract POT files via sphinx-build
+      shell: |
+        sphinx-build -b gettext doc/source doc/source/locale/pot/
+      args:
+        chdir: "{{ project_src }}"
+      register: sphinx_build_result
+
+    - name: Show sphinx-build output
+      debug:
+        msg: "{{ sphinx_build_result.stdout_lines }}"
+
+    - name: Find extracted POT files
+      find:
+        paths: "{{ project_src }}/doc/source/locale/pot"
+        patterns: "*.pot"
+      register: pot_files
+
+    - name: Show POT files
+      debug:
+        msg: "Extracted {{ pot_files.files | length }} POT files: {{ pot_files.files | map(attribute='path') | map('basename') | list }}"
+
+    # --- Upload POT files to Weblate ---
+    - name: Upload each POT file
+      command: >
+        wlc upload
+        --overwrite
+        --language en
+        --input {{ item.path }}
+        {{ weblate_component }}
+      loop: "{{ pot_files.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+      when:
+        - weblate_url is defined
+        - weblate_token is defined
+        - weblate_component is defined
+
+    - name: Skip Weblate upload (not configured)
+      debug:
+        msg: "Weblate upload skipped: weblate_url/weblate_token not configured. POT files at: {{ project_src }}/doc/source/locale/pot"
+      when: weblate_url is not defined or weblate_token is not defined
