@@ -1,50 +1,12 @@
-# POT 파일을 Weblate에 업로드하는 role
-# Weblate REST API 또는 wlc CLI 사용
+# POT 파일을 Weblate에 업로드하는 role (placeholder)
+# weblate_url, weblate_token이 정의된 경우에만 실제 동작
 
-- name: Check required variables
-  fail:
-    msg: "weblate_url and weblate_token must be defined"
+- name: Skip Weblate upload (not configured)
+  debug:
+    msg: "Weblate upload skipped: weblate_url/weblate_token not configured. POT files at: {{ pot_dir }}"
   when: weblate_url is not defined or weblate_token is not defined
 
-- name: Install wlc (Weblate CLI)
-  pip:
-    name: wlc
-    executable: pip3
-  become: true
-
-- name: Configure wlc
-  copy:
-    dest: "{{ ansible_env.HOME }}/.config/weblate"
-    content: |
-      [weblate]
-      url = {{ weblate_url }}/api/
-      key = {{ weblate_token }}
-    mode: '0600'
-
-- name: Find POT files to upload
-  find:
-    paths: "{{ pot_dir }}"
-    patterns: "*.pot"
-  register: pot_files_to_upload
-
-- name: Upload each POT file to Weblate component
-  uri:
-    url: "{{ weblate_url }}/api/projects/{{ weblate_project }}/repository/"
-    method: POST
-    headers:
-      Authorization: "Token {{ weblate_token }}"
-      Content-Type: "application/json"
-    body_format: json
-    body:
-      operation: pull
-    status_code: [200, 201]
-  register: weblate_pull_result
-  ignore_errors: true
-
-- name: Show Weblate upload result
+- name: Upload POT files to Weblate
   debug:
-    msg: "Weblate sync result: {{ weblate_pull_result }}"
-
-# Weblate가 Git 저장소를 직접 참조하는 경우 (권장 방식):
-# POT 파일이 저장소에 커밋된 후 Weblate가 자동으로 감지하므로
-# 별도 업로드 없이 Weblate에서 pull만 트리거하면 됨
+    msg: "TODO: Upload {{ pot_dir }} to {{ weblate_url }}"
+  when: weblate_url is defined and weblate_token is defined
