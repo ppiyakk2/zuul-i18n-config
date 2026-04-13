@@ -1,12 +1,38 @@
-# POT 파일을 Weblate에 업로드하는 role (placeholder)
-# weblate_url, weblate_token이 정의된 경우에만 실제 동작
+---
+# Requires: prepare-weblate-client role to have been run first
+# Requires: pot_dir variable (set by extract-pot-files role)
 
-- name: Skip Weblate upload (not configured)
+- name: Skip Weblate upload (weblate_url not configured)
   debug:
-    msg: "Weblate upload skipped: weblate_url/weblate_token not configured. POT files at: {{ pot_dir }}"
+    msg: "Weblate upload skipped: weblate_url/weblate_token not configured. Run prepare-weblate-client first."
   when: weblate_url is not defined or weblate_token is not defined
 
-- name: Upload POT files to Weblate
-  debug:
-    msg: "TODO: Upload {{ pot_dir }} to {{ weblate_url }}"
+- name: Upload POT files to Weblate via wlc
+  block:
+    - name: Find POT files to upload
+      find:
+        paths: "{{ pot_dir }}"
+        patterns: "*.pot"
+      register: pot_files
+
+    - name: Show POT files to upload
+      debug:
+        msg: "Uploading {{ pot_files.files | length }} POT file(s) to {{ weblate_url }}"
+
+    - name: Upload each POT file
+      command: >
+        wlc upload
+        --overwrite
+        --language en
+        --input {{ item.path }}
+        {{ weblate_component }}
+      loop: "{{ pot_files.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+      when: weblate_component is defined
+
+    - name: Note if weblate_component not set
+      debug:
+        msg: "TODO: set weblate_component variable to specify upload target (e.g. myproject/mycomponent)"
+      when: weblate_component is not defined
   when: weblate_url is defined and weblate_token is defined
