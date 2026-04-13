@@ -1,5 +1,5 @@
 # Weblate CLI client version to install
-weblate_client_version: "3.12.0"
+weblate_client_version: "1.17.2"
 
 # Weblate server URL (e.g., https://translate.openstack.org)
 # Must be set via Zuul Secret or job vars
