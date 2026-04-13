@@ -7,40 +7,35 @@
       debug:
         msg: "Processing {{ zuul.project.short_name }} on branch {{ zuul.branch }}"
 
-    # --- Debug: check what variables are available ---
-    - name: Debug weblate vars availability
-      debug:
-        msg:
-          - "weblate_url defined: {{ weblate_url is defined }}"
-          - "weblate_token defined: {{ weblate_token is defined }}"
-          - "weblate_api_credentials defined: {{ weblate_api_credentials is defined }}"
-
     # --- Prepare Weblate client ---
     - name: Prepare Weblate client
       include_role:
         name: prepare-weblate-client
-      when: weblate_url is defined and weblate_token is defined
+      vars:
+        weblate_url: "{{ weblate_api_credentials.url }}"
+        weblate_token: "{{ weblate_api_credentials.token }}"
+      when: weblate_api_credentials is defined
 
     - name: Verify weblate config file exists
       stat:
         path: "{{ weblate_config_path }}"
       register: weblate_config_stat
-      when: weblate_url is defined and weblate_token is defined
+      when: weblate_api_credentials is defined
 
     - name: Show weblate config file status
       debug:
         msg: "weblate config: {{ weblate_config_path }} exists={{ weblate_config_stat.stat.exists }}"
-      when: weblate_url is defined and weblate_token is defined
+      when: weblate_api_credentials is defined
 
     - name: Show weblate config url line
       command: grep "^url" {{ weblate_config_path }}
       register: weblate_config_url
-      when: weblate_url is defined and weblate_token is defined
+      when: weblate_api_credentials is defined
 
     - name: Print weblate config url line
       debug:
         msg: "{{ weblate_config_url.stdout }}"
-      when: weblate_url is defined and weblate_token is defined
+      when: weblate_api_credentials is defined
 
     # --- Extract POT files ---
     - name: Install build dependencies
@@ -85,11 +80,10 @@
       loop_control:
         label: "{{ item.path | basename }}"
       when:
-        - weblate_url is defined
-        - weblate_token is defined
+        - weblate_api_credentials is defined
         - weblate_component is defined
 
     - name: Skip Weblate upload (not configured)
       debug:
-        msg: "Weblate upload skipped: weblate_url/weblate_token not configured. POT files at: {{ project_src }}/doc/source/locale/pot"
-      when: weblate_url is not defined or weblate_token is not defined
+        msg: "Weblate upload skipped: weblate_api_credentials not configured. POT files at: {{ project_src }}/doc/source/locale/pot"
+      when: weblate_api_credentials is not defined

@@ -16,8 +16,6 @@
       - name: weblate_api_credentials
         secret: weblate_api_credentials
     vars:
-      weblate_url: "{{ weblate_api_credentials.url }}"
-      weblate_token: "{{ weblate_api_credentials.token }}"
       weblate_component: "contributor-guide/main"
 
 - job:
@@ -31,6 +29,4 @@
       - name: weblate_api_credentials
         secret: weblate_api_credentials
     vars:
-      weblate_url: "{{ weblate_api_credentials.url }}"
-      weblate_token: "{{ weblate_api_credentials.token }}"
       weblate_component: "contributor-guide/main"
