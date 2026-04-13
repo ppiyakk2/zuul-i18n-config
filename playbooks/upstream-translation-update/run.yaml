@@ -13,6 +13,27 @@
         name: prepare-weblate-client
       when: weblate_url is defined and weblate_token is defined
 
+    - name: Verify weblate config file exists
+      stat:
+        path: "{{ weblate_config_path }}"
+      register: weblate_config_stat
+      when: weblate_url is defined and weblate_token is defined
+
+    - name: Show weblate config file status
+      debug:
+        msg: "weblate config: {{ weblate_config_path }} exists={{ weblate_config_stat.stat.exists }}"
+      when: weblate_url is defined and weblate_token is defined
+
+    - name: Show weblate config url line
+      command: grep "^url" {{ weblate_config_path }}
+      register: weblate_config_url
+      when: weblate_url is defined and weblate_token is defined
+
+    - name: Print weblate config url line
+      debug:
+        msg: "{{ weblate_config_url.stdout }}"
+      when: weblate_url is defined and weblate_token is defined
+
     # --- Extract POT files ---
     - name: Install build dependencies
       pip:
