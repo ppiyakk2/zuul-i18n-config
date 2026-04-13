@@ -1,9 +1,6 @@
 # Sphinx 문서 프로젝트에서 POT 파일을 추출하는 role
 # contributor-guide 같은 Sphinx 기반 i18n 프로젝트 대상
 
-- name: Set project source directory
-  set_fact:
-    project_src: "{{ zuul.project.src_dir }}"
 
 - name: Install build dependencies
   pip:

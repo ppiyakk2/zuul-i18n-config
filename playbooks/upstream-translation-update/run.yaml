@@ -1,4 +1,7 @@
-- hosts: controller
+- hosts: localhost
+  connection: local
+  vars:
+    project_src: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
   tasks:
     - name: Show project info
       debug:
