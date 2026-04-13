@@ -1,8 +1,16 @@
-- hosts: controller
+- hosts: localhost
+  connection: local
+  vars:
+    project_src: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
   tasks:
     - name: Show project info
       debug:
         msg: "Proposing translation update for {{ zuul.project.short_name }}"
+
+    - name: Prepare Weblate client
+      include_role:
+        name: prepare-weblate-client
+      when: weblate_url is defined and weblate_token is defined
 
     - name: Download translations from Weblate
       include_role:

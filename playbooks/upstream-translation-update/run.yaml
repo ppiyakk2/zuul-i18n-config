@@ -7,6 +7,11 @@
       debug:
         msg: "Processing {{ zuul.project.short_name }} on branch {{ zuul.branch }}"
 
+    - name: Prepare Weblate client
+      include_role:
+        name: prepare-weblate-client
+      when: weblate_url is defined and weblate_token is defined
+
     - name: Extract POT files
       include_role:
         name: extract-pot-files

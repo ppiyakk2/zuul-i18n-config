@@ -1,0 +1,19 @@
+---
+- name: Install wlc (Weblate CLI client)
+  pip:
+    name: "wlc=={{ weblate_client_version }}"
+    executable: pip3
+  become: true
+
+- name: Ensure wlc config directory exists
+  file:
+    path: "{{ weblate_config_path | dirname }}"
+    state: directory
+    mode: "0700"
+
+- name: Write wlc config file
+  template:
+    src: weblate.ini.j2
+    dest: "{{ weblate_config_path }}"
+    mode: "0600"
+  no_log: true
