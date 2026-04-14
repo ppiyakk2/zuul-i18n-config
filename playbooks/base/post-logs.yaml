@@ -1,0 +1,12 @@
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: Create log output directory
+      file:
+        path: "/srv/static/logs/{{ zuul.build }}"
+        state: directory
+        mode: "0755"
+
+    - name: Copy job logs to serve directory
+      command: >
+        cp -a {{ zuul.executor.log_root }}/. /srv/static/logs/{{ zuul.build }}/
