@@ -1,6 +1,32 @@
 - hosts: localhost
   connection: local
   tasks:
+    - name: Debug zuul variables
+      debug:
+        msg: |
+          build={{ zuul.build }}
+          log_root={{ zuul.executor.log_root }}
+          work_root={{ zuul.executor.work_root }}
+          src_root={{ zuul.executor.src_root }}
+
+    - name: Check if log_root exists and list contents
+      command: ls -la {{ zuul.executor.log_root }}
+      register: log_root_ls
+      ignore_errors: true
+
+    - name: Show log_root contents
+      debug:
+        var: log_root_ls.stdout_lines
+
+    - name: Check srv static logs mount
+      command: ls -la /srv/static/logs/
+      register: srv_ls
+      ignore_errors: true
+
+    - name: Show srv mount
+      debug:
+        var: srv_ls.stdout_lines
+
     - name: Create log output directory
       file:
         path: "/srv/static/logs/{{ zuul.build }}"
@@ -10,3 +36,11 @@
     - name: Copy job logs to serve directory
       command: >
         cp -a {{ zuul.executor.log_root }}/. /srv/static/logs/{{ zuul.build }}/
+
+    - name: Verify copied files
+      command: ls -la /srv/static/logs/{{ zuul.build }}/
+      register: copied_ls
+
+    - name: Show copied files
+      debug:
+        var: copied_ls.stdout_lines
