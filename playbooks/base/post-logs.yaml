@@ -11,6 +11,13 @@
       command: >
         cp -a {{ zuul.executor.log_root }}/. /srv/static/logs/{{ zuul.build }}/
 
+    - name: Create gzip copies of all log files
+      shell: |
+        cd /srv/static/logs/{{ zuul.build }}
+        for f in *; do
+          [ -f "$f" ] && gzip -k "$f"
+        done
+
     - name: Generate zuul-manifest.json
       shell: |
         python3 -c "
@@ -19,7 +26,7 @@
         tree = []
         for f in sorted(os.listdir(log_dir)):
             fpath = os.path.join(log_dir, f)
-            if os.path.isfile(fpath) and f != 'zuul-manifest.json':
+            if os.path.isfile(fpath) and not f.endswith('.gz') and f != 'zuul-manifest.json':
                 mt, _ = mimetypes.guess_type(f)
                 tree.append({
                     'name': f,
@@ -31,11 +38,9 @@
             json.dump({'tree': tree}, fp, indent=2)
         print('Generated manifest with', len(tree), 'files')
         "
-      register: manifest_result
 
-    - name: Show manifest result
-      debug:
-        msg: "{{ manifest_result.stdout }}"
+    - name: Gzip the manifest too
+      command: gzip -k /srv/static/logs/{{ zuul.build }}/zuul-manifest.json
 
     - name: Return log URL to Zuul
       zuul_return:
