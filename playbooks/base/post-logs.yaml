@@ -11,6 +11,32 @@
       command: >
         cp -a {{ zuul.executor.log_root }}/. /srv/static/logs/{{ zuul.build }}/
 
+    - name: Generate zuul-manifest.json
+      shell: |
+        python3 -c "
+        import json, os, mimetypes
+        log_dir = '/srv/static/logs/{{ zuul.build }}'
+        tree = []
+        for f in sorted(os.listdir(log_dir)):
+            fpath = os.path.join(log_dir, f)
+            if os.path.isfile(fpath) and f != 'zuul-manifest.json':
+                mt, _ = mimetypes.guess_type(f)
+                tree.append({
+                    'name': f,
+                    'mimetype': mt or 'text/plain',
+                    'encoding': None,
+                    'size': os.path.getsize(fpath)
+                })
+        with open(os.path.join(log_dir, 'zuul-manifest.json'), 'w') as fp:
+            json.dump({'tree': tree}, fp, indent=2)
+        print('Generated manifest with', len(tree), 'files')
+        "
+      register: manifest_result
+
+    - name: Show manifest result
+      debug:
+        msg: "{{ manifest_result.stdout }}"
+
     - name: Return log URL to Zuul
       zuul_return:
         data:
