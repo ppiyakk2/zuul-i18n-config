@@ -129,7 +129,7 @@ def main():
     category_slug = slugify_branch(args.category)
 
     # Collect POT files
-    pot_files = sorted(glob.glob(os.path.join(args.pot_dir, "*.pot")))
+    pot_files = sorted(glob.glob(os.path.join(args.pot_dir, "**", "*.pot"), recursive=True))
     if not pot_files:
         print(f"[upload] No POT files found in {args.pot_dir}")
         sys.exit(0)
