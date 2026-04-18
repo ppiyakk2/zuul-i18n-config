@@ -65,7 +65,8 @@ weblate_project_check_or_skip() {
                "$url" -o "$tmp" || true)
 
   if [[ "$resp_code" != "200" ]]; then
-    echo "[weblate] project '${WEBLATE_PROJECT}' unavailable (HTTP $resp_code) -> skip job"
+    echo "[weblate] project '${WEBLATE_PROJECT}' unavailable (HTTP $resp_code)"
+    echo "  Response body: $(cat "$tmp")"
     ERROR_ABORT=0
     rm -f "$tmp"
     exit 0
