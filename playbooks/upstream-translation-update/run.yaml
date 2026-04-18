@@ -1,32 +1,13 @@
 - name: Upstream Translation Updates
   hosts: all
   tasks:
-    - name: Debug src_dir and workspace
-      debug:
-        msg: |
-          ansible_user_dir={{ ansible_user_dir }}
-          zuul.project.src_dir={{ zuul.project.src_dir }}
-          zuul.project.canonical_name={{ zuul.project.canonical_name }}
-          zuul.project.short_name={{ zuul.project.short_name }}
-          zuul.executor.src_root={{ zuul.executor.src_root | default('N/A') }}
-          zuul.executor.work_root={{ zuul.executor.work_root | default('N/A') }}
-
-    - name: Check if src_dir exists
-      stat:
-        path: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
-      register: src_stat
-
-    - name: Show src_dir status
-      debug:
-        msg: "src_dir exists={{ src_stat.stat.exists | default(false) }}"
-
-    - name: List home directory
-      command: ls -la {{ ansible_user_dir }}/
-      register: home_ls
-
-    - name: Show home contents
-      debug:
-        var: home_ls.stdout_lines
+    - name: Ensure project source is available
+      git:
+        repo: "https://github.com/{{ zuul.project.name }}.git"
+        dest: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
+        version: "{{ zuul.branch }}"
+      args:
+        creates: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/.git"
 
     - name: Run upstream_translation_update_weblate.sh script
       command: "{{ ansible_user_dir }}/scripts/upstream_translation_update_weblate.sh {{ zuul.project.short_name }} {{ zuul.job }} {{ zuul.branch }}"
