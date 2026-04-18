@@ -3,7 +3,6 @@
   connection: local
   roles:
     - prepare-weblate-client
-
   tasks:
     - name: Run propose_translation_update_weblate.sh script
       command: "{{ ansible_user_dir }}/scripts/propose_translation_update_weblate.sh {{ zuul.project.short_name }} {{ zuul.branch }} {{ zuul.job }}"
