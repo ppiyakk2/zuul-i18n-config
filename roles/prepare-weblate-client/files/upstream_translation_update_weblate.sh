@@ -24,6 +24,18 @@ SCRIPTSDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "$SCRIPTSDIR/common_translation_update.sh"
 
 echo "=========================================="
+echo "[args] upstream_translation_update_weblate.sh"
+echo "=========================================="
+echo "  \$1 PROJECT=$PROJECT"
+echo "  \$2 JOBNAME=$JOBNAME"
+echo "  \$3 BRANCHNAME=$BRANCHNAME"
+echo "  \$4 HORIZON_DIR=$HORIZON_DIR"
+echo "  WEBLATE_BRANCH=$WEBLATE_BRANCH"
+echo "  SCRIPTSDIR=$SCRIPTSDIR"
+echo "  PWD=$(pwd)"
+
+echo ""
+echo "=========================================="
 echo "[step 1/7] Checking Weblate environment"
 echo "=========================================="
 # checks weblate env
