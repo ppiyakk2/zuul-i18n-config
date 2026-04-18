@@ -1,6 +1,9 @@
 - name: Sync workspace to remote node
   hosts: all
   tasks:
+    - name: Start zuul_console for live log streaming
+      zuul_console:
+
     - name: Create src directory structure
       file:
         path: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
