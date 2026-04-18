@@ -1,4 +1,4 @@
-#!/bin/bash -xe
+#!/bin/bash -e
 # Common code used by propose_translation_update.sh and
 # upstream_translation_update.sh
 
@@ -17,11 +17,8 @@
 SCRIPTSDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $SCRIPTSDIR/common.sh
 
-# Set start of timestamp for subunit
+# Set start of timestamp for logging
 TRANS_START_TIME=$(date +%s)
-SUBUNIT_OUTPUT=testrepository.subunit
-# Our images have os-test installed in the following location
-TESTR_VENV=/usr/os-testr-env
 
 # Topic to use for our changes
 TOPIC=weblate/translations
@@ -71,17 +68,13 @@ function get_modulename {
 }
 
 function finish {
+    local duration=$(($(date +%s) - TRANS_START_TIME))
 
     if [[ "$ERROR_ABORT" -eq 1 ]] ; then
-        $TESTR_VENV/bin/generate-subunit $TRANS_START_TIME $SECONDS \
-            'fail' $JOBNAME >> $SUBUNIT_OUTPUT
-
+        echo "Translation job FAILED after ${duration}s"
     else
-        $TESTR_VENV/bin/generate-subunit $TRANS_START_TIME $SECONDS \
-            'success' $JOBNAME >> $SUBUNIT_OUTPUT
+        echo "Translation job SUCCEEDED after ${duration}s"
     fi
-
-    gzip -9 $SUBUNIT_OUTPUT
 
     # Only run this if VENV is setup.
     if [ "$VENV" != "" ] ; then
@@ -130,20 +123,12 @@ function setup_nodeenv {
 
 }
 
-# Setup a project for Zanata. This is used by both Python and Django projects.
-# syntax: setup_project <project> <zanata_version>
+# Setup a project for translation. Originally created zanata.xml,
+# now a no-op for Weblate workflow since Weblate manages components via API.
 function setup_project {
     local project=$1
     local version=$2
-
-    # Exclude all dot-files, particuarly for things such such as .tox
-    # and .venv
-    local exclude='.*/**'
-
-    python3 $SCRIPTSDIR/create-zanata-xml.py \
-        -p $project -v $version --srcdir . --txdir . \
-        -r '**/*.pot' '{path}/{locale_with_underscore}/LC_MESSAGES/{filename}.po' \
-        -e "$exclude" -f zanata.xml
+    echo "Setting up project $project version $version for Weblate"
 }
 
 
@@ -220,10 +205,6 @@ function setup_manuals {
         ZANATA_RULES="$ZANATA_RULES -r ./releasenotes/source/locale/releasenotes.pot releasenotes/source/locale/{locale_with_underscore}/LC_MESSAGES/releasenotes.po"
     fi
 
-    python3 $SCRIPTSDIR/create-zanata-xml.py \
-        -p $project -v $version --srcdir . --txdir . \
-        $ZANATA_RULES -e "$EXCLUDE" \
-        -f zanata.xml
 }
 
 # Setup a training-guides project for Zanata
@@ -233,12 +214,6 @@ function setup_training_guides {
 
     # Update the .pot file
     tox -e generatepot-training
-
-    python3 $SCRIPTSDIR/create-zanata-xml.py \
-        -p $project -v $version \
-        --srcdir doc/upstream-training/source/locale \
-        --txdir doc/upstream-training/source/locale \
-        -f zanata.xml
 }
 
 # Setup a i18n project for Zanata
@@ -248,12 +223,6 @@ function setup_i18n {
 
     # Update the .pot file
     tox -e generatepot
-
-    python3 $SCRIPTSDIR/create-zanata-xml.py \
-        -p $project -v $version \
-        --srcdir doc/source/locale \
-        --txdir doc/source/locale \
-        -f zanata.xml
 }
 
 # Setup a ReactJS project for Zanata
@@ -270,11 +239,6 @@ function setup_reactjs_project {
     npm run build
     # Transform them into .pot files
     npm run json2pot
-
-    python3 $SCRIPTSDIR/create-zanata-xml.py \
-        -p $project -v $version --srcdir . --txdir . \
-        -r '**/*.pot' '{path}/{locale}.po' \
-        -e "$exclude" -f zanata.xml
 }
 
 # Setup project so that git review works, sets global variable
@@ -283,16 +247,14 @@ function setup_review {
     # Note we cannot rely on the default branch in .gitreview being
     # correct so we are very explicit here.
     local branch=${1:-master}
-    FULL_PROJECT=$(grep project .gitreview  | cut -f2 -d= |sed -e 's/\.git$//')
+    FULL_PROJECT=${FULL_PROJECT:-$PROJECT}
     set +e
     read -d '' INITIAL_COMMIT_MSG <<EOF
-Imported Translations from Zanata
+Imported Translations from Weblate
 
-For more information about this automatic import see:
-https://docs.openstack.org/i18n/latest/reviewing-translation-import.html
+Translation update from Weblate translation platform.
 EOF
     set -e
-    git review -s
 
     # See if there is an open change in the zanata/translations
     # topic. If so, get the change id for the existing change for use
@@ -313,31 +275,18 @@ function send_patch {
     local ret
     local success=0
 
-    # We don't have any repos storing zanata.xml, so just remove it.
-    rm -f zanata.xml
-
     # Don't send a review if nothing has changed.
     if [ $(git diff --cached | wc -l) -gt 0 ]; then
-        # Commit and review
+        # Commit changes
         git commit -F- <<EOF
 $COMMIT_MSG
 EOF
-        CUR_PATCH_ID=$(git show | git patch-id | awk '{print $1}')
-        # Don't submit if we have the same patch id of previously submitted
-        # patchset
-        if [[ "${PREV_PATCH_ID}" != "${CUR_PATCH_ID}" ]]; then
-            # Show current status of tree for debugging purpose
-            git status
-            # Do error checking manually to ignore one class of failure.
-            set +e
-            # We cannot rely on the default branch in .gitreview being
-            # correct so we are very explicit here.
-            output=$(git review -t $TOPIC $branch)
-            ret=$?
-            [[ "$ret" -eq 0 || "$output" =~ "No changes between prior commit" ]]
-            success=$?
-            set -e
-        fi
+        # Show current status of tree for debugging purpose
+        git status
+        git log --oneline -1
+        echo "Translation changes committed successfully."
+    else
+        echo "No translation changes to commit."
     fi
     return $success
 }
@@ -726,48 +675,18 @@ function compress_po_files {
     done
 }
 
-function pull_from_zanata {
-
+function pull_from_weblate {
     local project=$1
 
-    # Since Zanata does not currently have an option to not download new
-    # files, we download everything, and then remove new files that are not
-    # translated enough.
-    zanata-cli -B -e pull
+    echo "Pulling translations from Weblate for project: $project"
+    # Weblate translations are downloaded via the API in
+    # propose_translation_update_weblate.sh
+    # This function is kept as a placeholder for compatibility.
+}
 
-    # We skip directories starting with '.' because they never contain
-    # translations for the project (in particular, '.tox'). Likewise
-    # 'node_modules' only contains dependencies and should be ignored.
-    for i in $(find . -name '*.po' ! -path './.*' ! -path './node_modules/*' -prune | cut -b3-); do
-        # We check release note translation percentage per release.
-        # To check this we need to extract messages per RST file.
-        # Let's defer checking it to propose_releasenotes.
-        local basefn=
-        if [ "$(basename $i)" = "releasenotes.po" ]; then
-            continue
-        fi
-        check_po_file "$i"
-        # We want new files to be >75% translated. The
-        # common documents in openstack-manuals have that relaxed to
-        # >40%.
-        percentage=75
-        if [ $project = "openstack-manuals" ]; then
-            case "$i" in
-                *common*)
-                    percentage=40
-                    ;;
-            esac
-        fi
-        if [ $RATIO -lt $percentage ]; then
-            # This means the file is below the ratio, but we only want
-            # to delete it, if it is a new file. Files known to git
-            # that drop below 40% will be cleaned up by
-            # cleanup_po_files.
-            if ! git ls-files | grep -xq "$i"; then
-                rm -f "$i"
-            fi
-        fi
-    done
+# Keep old name as alias for compatibility
+function pull_from_zanata {
+    pull_from_weblate "$@"
 }
 
 # Copy all pot files in modulename directory to temporary path for

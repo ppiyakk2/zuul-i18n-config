@@ -9,3 +9,6 @@
       command: "{{ ansible_user_dir }}/scripts/propose_translation_update_weblate.sh {{ zuul.project.short_name }} {{ zuul.branch }} {{ zuul.job }}"
       args:
         chdir: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
+      environment:
+        WEBLATE_URL: "{{ weblate_api_credentials.url }}"
+        WEBLATE_TOKEN: "{{ weblate_api_credentials.token }}"
