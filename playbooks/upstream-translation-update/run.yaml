@@ -2,7 +2,7 @@
   hosts: all
   tasks:
     - name: Run upstream_translation_update_weblate.sh script
-      command: "{{ ansible_user_dir }}/scripts/upstream_translation_update_weblate.sh {{ zuul.project.short_name }} {{ zuul.job }} {{ zuul.branch }}"
+      shell: "{{ ansible_user_dir }}/scripts/upstream_translation_update_weblate.sh {{ zuul.project.short_name }} {{ zuul.job }} {{ zuul.branch }}"
       args:
         chdir: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
       environment:
