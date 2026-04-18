@@ -11,7 +11,7 @@
       - gettext
     state: present
   become: yes
-  when: gettext_check.rc != 0
+  when: gettext_check.rc | int != 0
 
 - name: Install weblate client from pip
   pip:
