@@ -1,17 +1,11 @@
 ---
-- name: Check if gettext is installed
-  command: which msgfmt
-  register: gettext_check
-  changed_when: false
-  failed_when: false
-
 - name: Install necessary packages
   package:
     name:
       - gettext
     state: present
   become: yes
-  when: gettext_check.rc | int != 0
+  ignore_errors: yes
 
 - name: Install weblate client from pip
   pip:
