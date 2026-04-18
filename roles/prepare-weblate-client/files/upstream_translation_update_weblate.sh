@@ -59,7 +59,8 @@ weblate_project_check_or_skip() {
   echo "  Checking project: $url"
   local tmp resp_code
   tmp="$(mktemp)"
-  resp_code=$(curl -s -w "%{http_code}" --config ~/.curlrc \
+  resp_code=$(curl -s -w "%{http_code}" \
+               -H "Authorization: Token ${WEBLATE_TOKEN}" \
                "$url" -o "$tmp" || true)
 
   if [[ "$resp_code" != "200" ]]; then
