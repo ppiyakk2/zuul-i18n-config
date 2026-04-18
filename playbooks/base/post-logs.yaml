@@ -47,3 +47,8 @@
         data:
           zuul:
             log_url: "http://133.186.247.137:8088/{{ zuul.build }}/"
+            artifacts:
+              - name: "Zuul Manifest"
+                url: "http://133.186.247.137:8088/{{ zuul.build }}/zuul-manifest.json"
+                metadata:
+                  type: zuul_manifest
