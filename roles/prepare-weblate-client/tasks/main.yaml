@@ -1,9 +1,16 @@
 ---
-- name: Install wlc (Weblate CLI client)
+- name: Install necessary packages
+  package:
+    name:
+      - gettext
+    state: present
+  become: yes
+
+- name: Install weblate client from pip
   pip:
-    name: "wlc=={{ weblate_client_version }}"
+    name: wlc==1.15
+    state: present
     executable: pip3
-  become: true
 
 - name: Ensure wlc config directory exists
   file:
@@ -17,3 +24,20 @@
     dest: "{{ weblate_config_path }}"
     mode: "0600"
   no_log: true
+
+- name: Ensure scripts directory exists
+  file:
+    path: '{{ ansible_user_dir }}/scripts'
+    state: directory
+
+- name: Copy translation scripts to the script dir on the node
+  copy:
+    dest: '{{ ansible_user_dir }}/scripts/'
+    src: '{{ item }}'
+    mode: "0755"
+  with_items:
+    - weblate_utils.py
+    - get-modulename.py
+    - upstream_translation_update_weblate.sh
+    - propose_translation_update_weblate.sh
+    - common_translation_update.sh

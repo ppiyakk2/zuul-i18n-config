@@ -1,67 +1,10 @@
-- hosts: localhost
-  connection: local
-  vars:
-    project_src: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
+- name: Upstream Translation Updates
+  hosts: all
+  roles:
+    - prepare-weblate-client
+
   tasks:
-    - name: Show project info
-      debug:
-        msg: "Processing {{ zuul.project.short_name }} on branch {{ zuul.branch }}"
-
-    # --- Prepare Weblate client ---
-    - name: Prepare Weblate client
-      include_role:
-        name: prepare-weblate-client
-      vars:
-        weblate_url: "{{ weblate_api_credentials.url }}"
-        weblate_token: "{{ weblate_api_credentials.token }}"
-      when: weblate_api_credentials is defined
-
-    # --- Extract POT files ---
-    - name: Install build dependencies
-      pip:
-        name:
-          - sphinx
-          - openstackdocstheme
-          - sphinx-intl
-        executable: pip3
-      become: true
-
-    - name: Extract POT files via sphinx-build
-      shell: |
-        sphinx-build -b gettext doc/source doc/source/locale/pot/
+    - name: Run upstream_translation_update_weblate.sh script
+      command: "{{ ansible_user_dir }}/scripts/upstream_translation_update_weblate.sh {{ zuul.project.short_name }} {{ zuul.job }} {{ zuul.branch }} {{ ansible_user_dir }}/{{ zuul.projects['opendev.org/openstack/horizon'].src_dir }}"
       args:
-        chdir: "{{ project_src }}"
-      register: sphinx_build_result
-
-    - name: Show sphinx-build output
-      debug:
-        msg: "{{ sphinx_build_result.stdout_lines }}"
-
-    - name: Find extracted POT files
-      find:
-        paths: "{{ project_src }}/doc/source/locale/pot"
-        patterns: "*.pot"
-      register: pot_files
-
-    - name: Show POT files
-      debug:
-        msg: "Extracted {{ pot_files.files | length }} POT files: {{ pot_files.files | map(attribute='path') | map('basename') | list }}"
-
-    # --- Upload POT files to Weblate ---
-    - name: Upload each POT file
-      command: >
-        wlc upload
-        --overwrite
-        --input {{ item.path }}
-        {{ weblate_component }}/en
-      loop: "{{ pot_files.files }}"
-      loop_control:
-        label: "{{ item.path | basename }}"
-      when:
-        - weblate_api_credentials is defined
-        - weblate_component is defined
-
-    - name: Skip Weblate upload (not configured)
-      debug:
-        msg: "Weblate upload skipped: weblate_api_credentials not configured. POT files at: {{ project_src }}/doc/source/locale/pot"
-      when: weblate_api_credentials is not defined
+        chdir: "{{ zuul.project.src_dir }}"
