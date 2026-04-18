@@ -48,3 +48,4 @@
     - upstream_translation_update_weblate.sh
     - propose_translation_update_weblate.sh
     - upload_pot_weblate.py
+    - setup_weblate_project.py
