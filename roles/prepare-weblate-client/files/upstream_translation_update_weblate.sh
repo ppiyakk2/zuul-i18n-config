@@ -217,7 +217,7 @@ copy_pot "$ALL_MODULES"
 rm -rf translation-source
 mv .translation-source translation-source
 echo "  POT files:"
-ls -la translation-source/*.pot 2>/dev/null || echo "  (none)"
+find translation-source -name "*.pot" -exec echo "  {}" \; 2>/dev/null || echo "  (none)"
 
 # Upload POT files to Weblate via Python script
 # - Preprocesses each POT (msgen + Language:enu header)
