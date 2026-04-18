@@ -693,7 +693,7 @@ function pull_from_zanata {
 # publishing. This uses the exact same path.
 function copy_pot {
     local all_modules=$1
-    local target=.translation-source/$ZANATA_VERSION/
+    local target=.translation-source/$WEBLATE_BRANCH/
 
     for m in $all_modules ; do
         for f in `find $m -name "*.pot" ` ; do
