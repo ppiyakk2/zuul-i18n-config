@@ -1,13 +1,2 @@
-# Weblate CLI client version to install
-weblate_client_version: "1.17.2"
-
-# Weblate server URL (e.g., https://translate.openstack.org)
-# Must be set via Zuul Secret or job vars
-# weblate_url: ""
-
-# Weblate API token
-# Must be set via Zuul Secret or job vars
-# weblate_token: ""
-
 # Path to write the wlc config file
 weblate_config_path: "{{ ansible_user_dir }}/.config/weblate"
