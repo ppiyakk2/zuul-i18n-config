@@ -6,8 +6,6 @@
         repo: "https://github.com/{{ zuul.project.name }}.git"
         dest: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
         version: "{{ zuul.branch }}"
-      args:
-        creates: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/.git"
 
     - name: Run upstream_translation_update_weblate.sh script
       command: "{{ ansible_user_dir }}/scripts/upstream_translation_update_weblate.sh {{ zuul.project.short_name }} {{ zuul.job }} {{ zuul.branch }}"
