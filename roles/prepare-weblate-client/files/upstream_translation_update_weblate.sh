@@ -57,19 +57,14 @@ echo "  WEBLATE_BASE_URL=$WEBLATE_BASE_URL"
 weblate_project_check_or_skip() {
   local url="${WEBLATE_BASE_URL}/api/projects/${WEBLATE_PROJECT}/"
   echo "  Checking project: $url"
-  echo "  HOME=$HOME"
-  echo "  curlrc exists: $(ls -la ~/.curlrc 2>&1)"
   local tmp resp_code
-  local auth_header
-  auth_header=$(grep -oP 'header\s*=\s*"\K[^"]+' ~/.curlrc 2>/dev/null || echo "")
   tmp="$(mktemp)"
-  resp_code=$(curl -s -w "%{http_code}" \
-               -H "$auth_header" \
+  resp_code=$(curl -s -w "%{http_code}" --config ~/.curlrc \
                "$url" -o "$tmp" || true)
 
   if [[ "$resp_code" != "200" ]]; then
     echo "[weblate] project '${WEBLATE_PROJECT}' unavailable (HTTP $resp_code)"
-    echo "  Response body: $(cat "$tmp")"
+    echo "  Response: $(head -c 200 "$tmp")"
     ERROR_ABORT=0
     rm -f "$tmp"
     exit 0
