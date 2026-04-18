@@ -4,7 +4,9 @@
     description: Base job.
     post-run: playbooks/base/post-logs.yaml
     nodeset:
-      nodes: []
+      nodes:
+        - name: ubuntu-noble
+          label: ubuntu-noble
 
 - job:
     name: upstream-translation-update
