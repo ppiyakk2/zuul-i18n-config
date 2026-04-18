@@ -57,6 +57,8 @@ echo "  WEBLATE_BASE_URL=$WEBLATE_BASE_URL"
 weblate_project_check_or_skip() {
   local url="${WEBLATE_BASE_URL}/api/projects/${WEBLATE_PROJECT}/"
   echo "  Checking project: $url"
+  echo "  HOME=$HOME"
+  echo "  curlrc exists: $(ls -la ~/.curlrc 2>&1)"
   local tmp resp_code
   tmp="$(mktemp)"
   resp_code=$(curl -s -w "%{http_code}" --config ~/.curlrc \
