@@ -42,28 +42,28 @@ echo "=========================================="
 : "${WEBLATE_URL:?Set WEBLATE_URL}"
 : "${WEBLATE_TOKEN:?Set WEBLATE_TOKEN}"
 WEBLATE_PROJECT="${WEBLATE_PROJECT:-$PROJECT}"
-WEBLATE_COMPONENT="${WEBLATE_COMPONENT:-$PROJECT-$WEBLATE_BRANCH}"
+# Derive base URL (strip trailing /api/ if present)
+WEBLATE_BASE_URL="${WEBLATE_URL%/}"
+WEBLATE_BASE_URL="${WEBLATE_BASE_URL%/api}"
 echo "  PROJECT=$PROJECT"
 echo "  BRANCHNAME=$BRANCHNAME"
 echo "  WEBLATE_PROJECT=$WEBLATE_PROJECT"
-echo "  WEBLATE_COMPONENT=$WEBLATE_COMPONENT"
 echo "  WEBLATE_BRANCH=$WEBLATE_BRANCH"
 echo "  WEBLATE_URL=$WEBLATE_URL"
+echo "  WEBLATE_BASE_URL=$WEBLATE_BASE_URL"
 
 
-# Check if the component exists in Weblate
-weblate_component_check_or_skip() {
-  local url="${WEBLATE_URL%/}/api/components/${WEBLATE_PROJECT}/${WEBLATE_COMPONENT}/"
-  echo "  Checking component: $url"
-  # Separate response body/code
+# Check if the Weblate project exists and is not locked
+weblate_project_check_or_skip() {
+  local url="${WEBLATE_BASE_URL}/api/projects/${WEBLATE_PROJECT}/"
+  echo "  Checking project: $url"
   local tmp resp_code
   tmp="$(mktemp)"
-  resp_code=$(curl -w "%{http_code}" --config ~/.curlrc \
+  resp_code=$(curl -s -w "%{http_code}" --config ~/.curlrc \
                "$url" -o "$tmp" || true)
 
-  # If response is not 200 (component does not exist) → skip (exit 0)
   if [[ "$resp_code" != "200" ]]; then
-    echo "[weblate] component unavailable (HTTP $resp_code) -> skip job"
+    echo "[weblate] project '${WEBLATE_PROJECT}' unavailable (HTTP $resp_code) -> skip job"
     ERROR_ABORT=0
     rm -f "$tmp"
     exit 0
@@ -71,22 +71,22 @@ weblate_component_check_or_skip() {
 
   # Check lock status
   if command -v jq >/dev/null 2>&1; then
-    if jq -e '.locked==true or .is_locked==true' "$tmp" >/dev/null; then
-      echo "[weblate] component locked -> skip job"
+    if jq -e '.locked==true' "$tmp" >/dev/null 2>&1; then
+      echo "[weblate] project locked -> skip job"
       ERROR_ABORT=0
       rm -f "$tmp"
       exit 0
     fi
   else
-    if grep -qE '"(locked|is_locked)"[[:space:]]*:[[:space:]]*true' "$tmp"; then
-      echo "[weblate] component locked -> skip job"
+    if grep -qE '"locked"[[:space:]]*:[[:space:]]*true' "$tmp"; then
+      echo "[weblate] project locked -> skip job"
       ERROR_ABORT=0
       rm -f "$tmp"
       exit 0
     fi
   fi
 
-  echo "  Component OK (unlocked, HTTP $resp_code)"
+  echo "  Project OK (unlocked, HTTP $resp_code)"
   rm -f "$tmp"
 }
 
@@ -107,9 +107,9 @@ setup_venv
 
 echo ""
 echo "=========================================="
-echo "[step 4/7] Checking Weblate component"
+echo "[step 4/7] Checking Weblate project"
 echo "=========================================="
-weblate_component_check_or_skip
+weblate_project_check_or_skip
 
 echo ""
 echo "=========================================="
