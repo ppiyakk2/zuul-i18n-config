@@ -16,6 +16,8 @@
       Triggered on every merge to master.
     pre-run: playbooks/upstream-translation-update/pre.yaml
     run: playbooks/upstream-translation-update/run.yaml
+    required-projects:
+      - <your-org>/contributor-guide
     secrets:
       - name: weblate_api_credentials
         secret: weblate_api_credentials
