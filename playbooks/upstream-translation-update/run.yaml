@@ -9,3 +9,6 @@
       command: "{{ ansible_user_dir }}/scripts/upstream_translation_update_weblate.sh {{ zuul.project.short_name }} {{ zuul.job }} {{ zuul.branch }}"
       args:
         chdir: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
+      environment:
+        WEBLATE_URL: "{{ weblate_api_credentials.url }}"
+        WEBLATE_TOKEN: "{{ weblate_api_credentials.token }}"
