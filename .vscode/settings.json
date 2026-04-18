@@ -1,0 +1,8 @@
+{
+  "editor.formatOnSave": false,
+  "[yaml]": {
+    "editor.formatOnSave": false,
+    "editor.defaultFormatter": null
+  },
+  "github.copilot.nextEditSuggestions.enabled": false
+}
