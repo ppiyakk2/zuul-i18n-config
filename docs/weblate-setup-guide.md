@@ -249,6 +249,103 @@ python3 setup_weblate_project.py \
 | `--pot-dir` | (없음) | POT 파일 디렉토리 |
 | `--no-verify-ssl` | false | SSL 검증 비활성화 |
 
+## POT 업로드 (upload_pot_weblate.py)
+
+커밋이 머지된 후 새로운 POT를 추출하고 Weblate에 업데이트하는 스크립트.
+`upstream_translation_update_weblate.sh`에서 호출된다.
+
+### 동작 순서
+
+```
+1. POT 파일 목록 수집 (translation-source/*.pot)
+2. 각 POT에 대해:
+   a. msgen 적용 (msgstr에 영어 원문 채우기)
+   b. Language:enu 헤더 추가
+   c. 컴포넌트 존재 여부 확인 → 없으면 자동 생성
+   d. 소스 파일 업로드 (POST /api/translations/.../en_US/file/)
+   e. 결과 로깅 (성공/실패/skip)
+3. 요약 출력
+```
+
+### 사용법
+
+```bash
+python3 upload_pot_weblate.py \
+    --config ~/.config/weblate \
+    --project contributor-guide \
+    --category master \
+    --pot-dir translation-source/
+```
+
+### upstream_translation_update_weblate.sh에서의 호출
+
+```bash
+python3 "$SCRIPTSDIR/upload_pot_weblate.py" \
+    --config ~/.config/weblate \
+    --project "$WEBLATE_PROJECT" \
+    --category "$WEBLATE_BRANCH" \
+    --pot-dir translation-source/
+```
+
+기존의 curl 반복 루프를 대체한다:
+
+```bash
+# 기존 (제거됨)
+for pot in translation-source/*.pot; do
+  msgen "$pot" -o "$pot"
+  curl -X POST -F "file=@${pot}" -F "method=replace" \
+    "${WEBLATE_URL}/api/translations/.../en_US/file/"
+done
+
+# 개선 (Python 스크립트 한 줄 호출)
+python3 "$SCRIPTSDIR/upload_pot_weblate.py" --config ... --project ... --category ... --pot-dir ...
+```
+
+### 컴포넌트 존재 여부 확인 로직
+
+카테고리별로 컴포넌트를 구분한다. API 응답의 `category` 필드가 URL 형태이므로,
+target category의 URL을 먼저 조회한 뒤 일치 여부를 비교한다.
+
+```python
+# category URL 기반 매칭 (slug 단순 비교 아님)
+target_cat_url = setup.get_category_url(project, category_slug)
+for c in existing_components:
+    if c.get("category") == target_cat_url:
+        existing_slugs.add(c.get("slug"))
+```
+
+### weblate.ini 형식 호환
+
+`SimpleIniConfig`는 두 가지 형식을 지원한다:
+
+```ini
+# 형식 1: Zuul 템플릿 ([weblate] 섹션에 key 직접)
+[weblate]
+url = https://weblate.printf.kr/api/
+key = wlu_xxxxx
+
+# 형식 2: wlc 공식 형식 ([keys] 섹션에 URL→token 매핑)
+[weblate]
+url = https://weblate.printf.kr/api/
+
+[keys]
+https://weblate.printf.kr/api/ = wlu_xxxxx
+```
+
+현재 Zuul 템플릿(`weblate.ini.j2`)은 형식 2 (wlc 형식)를 사용한다.
+
+### CLI 옵션
+
+| 옵션 | 기본값 | 설명 |
+|------|--------|------|
+| `--config` | `~/.config/weblate` | weblate.ini 경로 |
+| `--project` | (필수) | Weblate 프로젝트 slug |
+| `--category` | (필수) | Branch 이름 (slug로 자동 변환) |
+| `--pot-dir` | (필수) | POT 파일 디렉토리 |
+| `--source-language` | `en_US` | 소스 언어 코드 |
+| `--auto-create` | true | 없는 컴포넌트 자동 생성 |
+| `--no-verify-ssl` | false | SSL 검증 비활성화 |
+
 ## 테스트 환경 정보
 
 | 항목 | 값 |
@@ -256,6 +353,6 @@ python3 setup_weblate_project.py \
 | Weblate URL | https://weblate.printf.kr |
 | Weblate 버전 | 5.15.1 |
 | 인증 | ~/.config/weblate (wlc 형식) |
-| 빌드 서버 | 133.186.247.137 (ubuntu, SSH key: ~/.ssh/ne-se-pub-test-pyk.pem) |
-| 소스 경로 | /home/ubuntu/contributor-guide-work |
-| POT 빌드 venv | /home/ubuntu/contributor-guide-work/.venv |
+| Zuul 서버 | 133.186.247.137 (ubuntu, SSH key: ~/.ssh/ne-se-pub-test-pyk.pem) |
+| Job 실행 노드 | 133.186.244.143 / 192.168.0.34 (Ubuntu 24.04) |
+| 소스 경로 (노드) | ~/src/github.com/ppiyakk2/contributor-guide (Zuul이 자동 동기화) |
