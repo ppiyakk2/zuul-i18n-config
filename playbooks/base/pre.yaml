@@ -13,3 +13,4 @@
       synchronize:
         src: "{{ zuul.executor.work_root }}/src/{{ zuul.project.canonical_name }}/"
         dest: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/"
+      no_log: true
