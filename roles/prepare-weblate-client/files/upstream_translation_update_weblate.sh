@@ -214,6 +214,7 @@ echo "[step 7/7] Uploading POT files to Weblate"
 echo "=========================================="
 # Collect POT files for upload
 copy_pot "$ALL_MODULES"
+rm -rf translation-source
 mv .translation-source translation-source
 echo "  POT files:"
 ls -la translation-source/*.pot 2>/dev/null || echo "  (none)"
