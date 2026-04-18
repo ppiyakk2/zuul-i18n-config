@@ -1,8 +1,5 @@
 ---
 - name: Install sphinx and documentation packages
   pip:
-    name:
-      - "{{ doc_building_packages }}"
-      - sphinx-intl
-      - openstackdocstheme
+    name: "{{ doc_building_packages + ['sphinx-intl', 'openstackdocstheme'] }}"
     virtualenv: "{{ ansible_user_dir }}/.venv"
