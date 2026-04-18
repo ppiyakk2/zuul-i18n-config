@@ -1,5 +1,6 @@
 - name: Prepare translation environment
-  hosts: all
+  hosts: localhost
+  connection: local
   roles:
     - role: ensure-sphinx
       doc_building_packages:
