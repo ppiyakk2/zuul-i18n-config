@@ -1,8 +1,6 @@
 - name: Upstream Translation Updates
   hosts: localhost
   connection: local
-  roles:
-    - prepare-weblate-client
   tasks:
     - name: Run upstream_translation_update_weblate.sh script
       command: "{{ ansible_user_dir }}/scripts/upstream_translation_update_weblate.sh {{ zuul.project.short_name }} {{ zuul.job }} {{ zuul.branch }}"

@@ -1,0 +1,19 @@
+---
+- name: Install gettext
+  package:
+    name:
+      - gettext
+    state: present
+  become: yes
+  ignore_errors: yes
+
+- name: Install Babel and related packages
+  pip:
+    name:
+      - pip
+      - setuptools
+      - pbr
+      - Babel
+      - lxml
+      - requests
+    virtualenv: "{{ ansible_user_dir }}/.venv"
