@@ -1,29 +1,4 @@
 ---
-# --- System packages (equivalent to ensure-babel + bindep) ---
-- name: Install necessary packages
-  package:
-    name:
-      - gettext
-    state: present
-  become: yes
-  ignore_errors: yes
-
-# --- Python venv with translation tools (equivalent to ensure-babel + ensure-sphinx) ---
-- name: Setup translation venv with babel and sphinx
-  pip:
-    name:
-      - pip
-      - setuptools
-      - pbr
-      - Babel
-      - lxml
-      - requests
-      - sphinx
-      - sphinx-intl
-      - reno
-      - openstackdocstheme
-    virtualenv: "{{ ansible_user_dir }}/.venv"
-
 # --- Weblate client ---
 - name: Install weblate client from pip
   pip:
@@ -53,23 +28,3 @@
       header = "Authorization: Token {{ weblate_api_credentials.token }}"
     mode: "0600"
   no_log: true
-
-# --- Translation scripts ---
-- name: Ensure scripts directory exists
-  file:
-    path: '{{ ansible_user_dir }}/scripts'
-    state: directory
-
-- name: Copy translation scripts to the script dir on the node
-  copy:
-    dest: '{{ ansible_user_dir }}/scripts/'
-    src: '{{ item }}'
-    mode: "0755"
-  with_items:
-    - common.sh
-    - common_translation_update.sh
-    - weblate_utils.py
-    - get-modulename.py
-    - upstream_translation_update_weblate.sh
-    - propose_translation_update_weblate.sh
-    - upload_pot_weblate.py

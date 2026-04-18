@@ -1,0 +1,11 @@
+- name: Prepare translation environment
+  hosts: all
+  roles:
+    - role: ensure-sphinx
+      doc_building_packages:
+        - sphinx
+        - reno
+      sphinx_python: python3
+    - ensure-babel
+    - copy-proposal-common-scripts
+    - prepare-weblate-client

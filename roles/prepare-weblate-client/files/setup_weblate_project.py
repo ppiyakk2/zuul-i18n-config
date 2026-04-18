@@ -25,6 +25,8 @@ This script creates:
 import argparse
 import configparser
 import json
+import os
+import re
 import sys
 
 import requests
@@ -178,57 +180,73 @@ class WeblateSetup:
         return components
 
     def create_component(self, project_slug, name, slug,
-                         category_slug=None, file_format="po",
-                         source_language="en"):
-        """Create a component (file-upload mode, no VCS).
+                         pot_file=None, category_slug=None,
+                         source_language="en_US"):
+        """Create a component with POT file upload (po-mono format).
+
+        Uses docfile upload with po-mono format and explicit source_language.
+        POT files must have 'Language: enu' header to avoid the built-in
+        'en' language alias conflict.
 
         Args:
             project_slug: Project slug
             name: Component display name
             slug: Component slug
+            pot_file: Path to POT file (with Language: enu header)
             category_slug: Category slug to place the component under
-            file_format: Translation file format (default: po)
-            source_language: Source language code (default: en)
+            source_language: Source language code (default: en_US)
         """
         # Check if component already exists
         existing = self.list_components(project_slug)
         for comp in existing:
             if comp.get("slug") == slug:
-                # Check if it's in the right category
                 comp_cat = comp.get("category_slug", "")
                 if comp_cat == (category_slug or ""):
                     print(f"[component] '{slug}' already exists "
                           f"in category '{category_slug}' — skipping")
                     return False, comp
 
-        data = {
-            "name": name,
-            "slug": slug,
-            "file_format": file_format,
-            "filemask": f"locale/*/LC_MESSAGES/{slug}.po",
-            "new_base": f"locale/{slug}.pot",
-            "vcs": "local",
-            "repo": "local:",
-            "source_language": {"code": source_language},
+        # Build multipart form data
+        form_data = {
+            "name": (None, name),
+            "slug": (None, slug),
+            "file_format": (None, "po-mono"),
+            "source_language": (None, source_language),
         }
 
         # Attach to category if specified
         if category_slug:
             category_url = self.get_category_url(project_slug, category_slug)
             if category_url:
-                data["category"] = category_url
+                form_data["category"] = (None, category_url)
             else:
                 print(f"[component] WARNING: category '{category_slug}' "
                       f"not found, creating without category")
 
-        resp = self._post(f"projects/{project_slug}/components/", data)
+        # Attach POT file
+        if pot_file:
+            form_data["docfile"] = (
+                os.path.basename(pot_file),
+                open(pot_file, "rb"),
+                "application/x-gettext",
+            )
+
+        headers = {
+            "Accept": "application/json",
+            "Authorization": self.headers["Authorization"],
+        }
+        url = self._api_url(f"projects/{project_slug}/components/")
+        resp = requests.post(
+            url, headers=headers, files=form_data, verify=self.verify,
+        )
+
         if resp.status_code in (200, 201):
             print(f"[component] '{slug}' created "
                   f"(category: {category_slug or 'none'})")
             return True, resp
         else:
             print(f"[component] failed to create '{slug}': "
-                  f"HTTP {resp.status_code} — {resp.text}")
+                  f"HTTP {resp.status_code} — {resp.text[:200]}")
             return False, resp
 
 
@@ -245,13 +263,35 @@ DEFAULT_COMPONENTS = [
 ]
 
 
+def prepare_pot_for_weblate(src_pot, dst_pot):
+    """Add 'Language: enu' header to POT file for Weblate compatibility.
+
+    Weblate's built-in 'en' pseudo-language has 'en_us' as an alias,
+    which conflicts with the real 'en_US' language. Using 'enu'
+    (a unique alias for en_US) avoids this conflict.
+    """
+    with open(src_pot, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Add Language header if not present
+    if '"Language:' not in content:
+        content = content.replace(
+            '"Content-Transfer-Encoding:',
+            '"Language: enu\\n"\n"Content-Transfer-Encoding:',
+        )
+    dst_dir = os.path.dirname(dst_pot)
+    if dst_dir:
+        os.makedirs(dst_dir, exist_ok=True)
+    with open(dst_pot, "w", encoding="utf-8") as f:
+        f.write(content)
+
+
 def slugify_branch(branch):
     """Convert branch name to Weblate slug.
 
     e.g., stable/2026.01 -> stable-2026-01
     Only letters, numbers, underscores, and hyphens are allowed.
     """
-    import re
     slug = branch.replace("/", "-")
     slug = re.sub(r"[^a-zA-Z0-9_-]", "-", slug)
     return slug
@@ -287,12 +327,15 @@ def main():
         help="Component names to create (default: all contributor-guide docs)"
     )
     parser.add_argument(
+        "--pot-dir", default=None,
+        help="Directory containing POT files for component creation"
+    )
+    parser.add_argument(
         "--no-verify-ssl", action="store_true",
         help="Disable SSL verification"
     )
     args = parser.parse_args()
 
-    import os
     config_path = os.path.expanduser(args.config)
     wconfig = SimpleIniConfig(config_path)
 
@@ -321,15 +364,35 @@ def main():
             slug=slug,
         )
 
-    # 3. Create components under each category
+    # 3. Prepare POT files (add Language: enu header if missing)
     components = args.components or DEFAULT_COMPONENTS
+    pot_dir = args.pot_dir
+    if pot_dir:
+        prepared_dir = os.path.join(pot_dir, "_prepared")
+        os.makedirs(prepared_dir, exist_ok=True)
+        for comp_name in components:
+            src = os.path.join(pot_dir, f"{comp_name}.pot")
+            dst = os.path.join(prepared_dir, f"{comp_name}.pot")
+            if os.path.exists(src):
+                prepare_pot_for_weblate(src, dst)
+        pot_dir = prepared_dir
+
+    # 4. Create components under each category
     for cat_slug in category_slugs:
         print(f"\n--- Creating components in category '{cat_slug}' ---")
         for comp_name in components:
+            pot_file = None
+            if pot_dir:
+                pot_path = os.path.join(pot_dir, f"{comp_name}.pot")
+                if os.path.exists(pot_path):
+                    pot_file = pot_path
+                else:
+                    print(f"[component] WARNING: POT not found: {pot_path}")
             setup.create_component(
                 project_slug=project_slug,
                 name=comp_name,
                 slug=comp_name,
+                pot_file=pot_file,
                 category_slug=cat_slug,
             )
 

@@ -1,0 +1,4 @@
+sphinx_python: python3
+doc_building_packages:
+  - sphinx
+  - reno
