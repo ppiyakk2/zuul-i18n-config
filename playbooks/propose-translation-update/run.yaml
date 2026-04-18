@@ -8,4 +8,4 @@
     - name: Run propose_translation_update_weblate.sh script
       command: "{{ ansible_user_dir }}/scripts/propose_translation_update_weblate.sh {{ zuul.project.short_name }} {{ zuul.branch }} {{ zuul.job }}"
       args:
-        chdir: "{{ zuul.project.src_dir }}"
+        chdir: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
