@@ -39,8 +39,11 @@ class SimpleIniConfig:
         config = configparser.ConfigParser(delimiters=("=",))
         config.read(inifile)
         self.url = config.get("weblate", "url").strip().rstrip("/")
-        # Keys section maps URL -> token
-        if config.has_section("keys"):
+        # Format 1: [weblate] section has key directly (Zuul template)
+        if config.has_option("weblate", "key"):
+            self.key = config.get("weblate", "key").strip()
+        # Format 2: [keys] section maps URL -> token (wlc format)
+        elif config.has_section("keys"):
             for url, key in config.items("keys"):
                 if url.startswith(("http://", "https://")):
                     self.key = key.strip()
@@ -48,7 +51,7 @@ class SimpleIniConfig:
             else:
                 raise ValueError("No API key found in [keys] section")
         else:
-            raise ValueError("No [keys] section in config")
+            raise ValueError("No key found in config")
 
 
 class WeblateSetup:
