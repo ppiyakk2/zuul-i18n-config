@@ -53,45 +53,50 @@ echo "  WEBLATE_URL=$WEBLATE_URL"
 echo "  WEBLATE_BASE_URL=$WEBLATE_BASE_URL"
 
 
-# Check if the Weblate project exists and is not locked
+# Check if the Weblate project exists and is not locked (via Python)
 weblate_project_check_or_skip() {
-  local url="${WEBLATE_BASE_URL}/api/projects/${WEBLATE_PROJECT}/"
-  echo "  Checking project: $url"
-  echo "  WEBLATE_TOKEN length: ${#WEBLATE_TOKEN}"
-  echo "  curl version: $(curl --version | head -1)"
-  local tmp resp_code
-  tmp="$(mktemp)"
-  resp_code=$(curl -s -w "%{http_code}" \
-               -H "Authorization: Token ${WEBLATE_TOKEN}" \
-               "$url" -o "$tmp" || true)
+  local result
+  result=$(PYTHONPATH="$SCRIPTSDIR" python3 -c "
+from setup_weblate_project import SimpleIniConfig, WeblateSetup
+import os, sys
 
-  if [[ "$resp_code" != "200" ]]; then
-    echo "[weblate] project '${WEBLATE_PROJECT}' unavailable (HTTP $resp_code)"
-    echo "  Response: $(head -c 200 "$tmp")"
-    ERROR_ABORT=0
-    rm -f "$tmp"
-    exit 0
-  fi
+wconfig = SimpleIniConfig(os.path.expanduser('~/.config/weblate'))
+setup = WeblateSetup(wconfig)
 
-  # Check lock status
-  if command -v jq >/dev/null 2>&1; then
-    if jq -e '.locked==true' "$tmp" >/dev/null 2>&1; then
-      echo "[weblate] project locked -> skip job"
+resp = setup.get_project('${WEBLATE_PROJECT}')
+if resp.status_code != 200:
+    print('UNAVAILABLE:' + str(resp.status_code))
+    sys.exit(0)
+
+data = resp.json()
+if data.get('locked', False):
+    print('LOCKED')
+    sys.exit(0)
+
+print('OK')
+" 2>&1) || true
+
+  echo "  Project check result: $result"
+
+  case "$result" in
+    UNAVAILABLE:*)
+      echo "[weblate] project '${WEBLATE_PROJECT}' unavailable ($result) -> skip job"
       ERROR_ABORT=0
-      rm -f "$tmp"
       exit 0
-    fi
-  else
-    if grep -qE '"locked"[[:space:]]*:[[:space:]]*true' "$tmp"; then
-      echo "[weblate] project locked -> skip job"
+      ;;
+    LOCKED)
+      echo "[weblate] project '${WEBLATE_PROJECT}' locked -> skip job"
       ERROR_ABORT=0
-      rm -f "$tmp"
       exit 0
-    fi
-  fi
-
-  echo "  Project OK (unlocked, HTTP $resp_code)"
-  rm -f "$tmp"
+      ;;
+    OK)
+      echo "  Project OK (unlocked)"
+      ;;
+    *)
+      echo "[weblate] project check error: $result"
+      echo "  Continuing anyway..."
+      ;;
+  esac
 }
 
 echo ""
