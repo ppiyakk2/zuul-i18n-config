@@ -60,8 +60,11 @@ weblate_project_check_or_skip() {
   echo "  HOME=$HOME"
   echo "  curlrc exists: $(ls -la ~/.curlrc 2>&1)"
   local tmp resp_code
+  local auth_header
+  auth_header=$(grep -oP 'header\s*=\s*"\K[^"]+' ~/.curlrc 2>/dev/null || echo "")
   tmp="$(mktemp)"
-  resp_code=$(curl -s -w "%{http_code}" --config ~/.curlrc \
+  resp_code=$(curl -s -w "%{http_code}" \
+               -H "$auth_header" \
                "$url" -o "$tmp" || true)
 
   if [[ "$resp_code" != "200" ]]; then
