@@ -2,6 +2,7 @@
     name: base
     parent: null
     description: Base job.
+    pre-run: playbooks/base/pre.yaml
     post-run: playbooks/base/post-logs.yaml
     nodeset:
       nodes:
