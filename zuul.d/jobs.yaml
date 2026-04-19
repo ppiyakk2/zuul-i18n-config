@@ -41,7 +41,7 @@
     description: |
       Extract POT files from horizon and upload to Weblate.
       Triggered on merge to master or stable/* branches.
-    pre-run: playbooks/upstream-translation-update/pre.yaml
+    pre-run: playbooks/upstream-translation-update-horizon/pre.yaml
     run: playbooks/upstream-translation-update/run.yaml
     required-projects:
       - ppiyakk2/horizon

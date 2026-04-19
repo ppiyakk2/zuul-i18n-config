@@ -1,0 +1,5 @@
+- name: Download upper-constraints.txt from openstack/requirements
+  get_url:
+    url: "https://opendev.org/openstack/requirements/raw/branch/{{ zuul.branch }}/upper-constraints.txt"
+    dest: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}/upper-constraints.txt"
+    mode: '0644'
