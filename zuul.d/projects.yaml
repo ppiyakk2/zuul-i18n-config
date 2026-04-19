@@ -9,3 +9,15 @@
     periodic:
       jobs:
         - propose-translation-update
+
+- project:
+    name: <your-org>/horizon
+    check:
+      jobs:
+        - noop
+    post:
+      jobs:
+        - upstream-translation-update-horizon
+    periodic:
+      jobs:
+        - propose-translation-update-horizon
