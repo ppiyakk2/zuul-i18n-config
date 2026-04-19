@@ -80,12 +80,32 @@ def preprocess_pot(pot_file, work_dir):
     return final_path
 
 
-def pot_to_component_slug(pot_file):
-    """Derive component slug from POT filename.
+def pot_to_component_slug(pot_file, pot_dir):
+    """Derive component slug from POT file path.
 
-    e.g., doc-common.pot -> doc-common
+    For Django modules (path contains <module>/locale/<domain>.pot):
+        horizon/locale/django.pot -> horizon-django
+        openstack_dashboard/locale/djangojs.pot -> openstack-dashboard-djangojs
+
+    For doc/releasenotes (path contains source/locale/<name>.pot):
+        doc/source/locale/doc-admin.pot -> doc-admin
+        releasenotes/source/locale/releasenotes.pot -> releasenotes
     """
-    return os.path.splitext(os.path.basename(pot_file))[0]
+    rel_path = os.path.relpath(pot_file, pot_dir)
+    parts = rel_path.replace("\\", "/").split("/")
+    domain = os.path.splitext(parts[-1])[0]
+
+    # Find 'locale' in the path to determine the pattern
+    if "locale" in parts:
+        locale_idx = parts.index("locale")
+        # Check if it's a Django module pattern: <module>/locale/<domain>.pot
+        # vs doc pattern: <something>/source/locale/<name>.pot
+        if locale_idx >= 1 and (locale_idx < 2 or parts[locale_idx - 1] != "source"):
+            module = parts[locale_idx - 1]
+            module_slug = module.replace("_", "-")
+            return f"{module_slug}-{domain}"
+
+    return domain
 
 
 def main():
@@ -159,7 +179,7 @@ def main():
 
     with tempfile.TemporaryDirectory() as work_dir:
         for pot_file in pot_files:
-            comp_slug = pot_to_component_slug(pot_file)
+            comp_slug = pot_to_component_slug(pot_file, args.pot_dir)
             print(f"\n--- {comp_slug} ---")
 
             # 1. Preprocess POT

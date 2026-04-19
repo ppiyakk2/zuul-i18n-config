@@ -25,19 +25,31 @@ branch=${2:-"master"}
 TEMP_DIR=$(mktemp -d)
 trap 'rm -rf "$TEMP_DIR"' INT TERM EXIT
 
-get_filename() {
+get_target_info() {
+    # Parse component slug to determine target directory and filename.
+    # Module-prefixed Django components (e.g., horizon-django,
+    # openstack-dashboard-djangojs) go to <module>/locale/.
+    # Doc/releasenotes components go to <project>/locale/.
+    #
+    # Outputs: "<target_dir_base> <po_filename>"
     local component=$1
+    local project=$2
 
+    # Check for Django module pattern: <module>-django or <module>-djangojs
+    if [[ "$component" =~ ^(.+)-(django|djangojs)$ ]]; then
+        local module_slug="${BASH_REMATCH[1]}"
+        local domain="${BASH_REMATCH[2]}"
+        # Convert slug back to Python module name (hyphens -> underscores)
+        local module_name=$(echo "$module_slug" | tr '-' '_')
+        echo "$module_name ${domain}.po"
+        return
+    fi
+
+    # Default: doc/releasenotes components -> project/locale/
     case "$component" in
-        *javascript*|*js*)
-            echo "djangojs.po"
-            ;;
-        *-dashboard|horizon|*-ui|*-web-ui)
-            echo "django.po"
-            ;;
         *)
             local po_name=$(echo "$component" | tr '-' '_')
-            echo "${po_name}.po"
+            echo "$project ${po_name}.po"
             ;;
     esac
 }
@@ -80,16 +92,20 @@ process_translations() {
 
         if download_translation "$project" "$component" "$lang" \
                                 "$temp_file"; then
-            local target_dir="$project/locale/$lang/LC_MESSAGES"
+            local target_info=$(get_target_info "$component" "$project")
+            local target_base=$(echo "$target_info" | cut -d' ' -f1)
+            local po_filename=$(echo "$target_info" | cut -d' ' -f2)
+            local target_dir="$target_base/locale/$lang/LC_MESSAGES"
             mkdir -p "$target_dir"
 
-            local po_filename=$(get_filename "$component")
             cp "$temp_file" "$target_dir/$po_filename"
         fi
     done
 
-    if [ -d "$project/locale" ]; then
-        find "$project/locale" -name "*.po" -exec git add {} +
+    local target_info=$(get_target_info "$component" "$project")
+    local target_base=$(echo "$target_info" | cut -d' ' -f1)
+    if [ -d "$target_base/locale" ]; then
+        find "$target_base/locale" -name "*.po" -exec git add {} +
     fi
 }
 
