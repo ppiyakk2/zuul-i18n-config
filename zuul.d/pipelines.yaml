@@ -34,7 +34,7 @@
     trigger:
       github.com:
         - event: push
-          ref: ^refs/heads/master$
+          ref: ^refs/heads/(master|stable/.*)$
     success:
       github.com:
         comment: false

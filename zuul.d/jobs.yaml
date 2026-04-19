@@ -22,8 +22,6 @@
     secrets:
       - name: weblate_api_credentials
         secret: weblate_api_credentials
-    vars:
-      weblate_component: "contributor-guide/main"
 
 - job:
     name: propose-translation-update
@@ -36,5 +34,31 @@
     secrets:
       - name: weblate_api_credentials
         secret: weblate_api_credentials
-    vars:
-      weblate_component: "contributor-guide/main"
+
+- job:
+    name: upstream-translation-update-horizon
+    parent: base
+    description: |
+      Extract POT files from horizon and upload to Weblate.
+      Triggered on merge to master or stable/* branches.
+    pre-run: playbooks/upstream-translation-update/pre.yaml
+    run: playbooks/upstream-translation-update/run.yaml
+    required-projects:
+      - ppiyakk2/horizon
+    secrets:
+      - name: weblate_api_credentials
+        secret: weblate_api_credentials
+
+- job:
+    name: propose-translation-update-horizon
+    parent: base
+    description: |
+      Download translations from Weblate and propose a PR
+      to the horizon repository.
+    pre-run: playbooks/propose-translation-update/pre.yaml
+    run: playbooks/propose-translation-update/run.yaml
+    required-projects:
+      - ppiyakk2/horizon
+    secrets:
+      - name: weblate_api_credentials
+        secret: weblate_api_credentials

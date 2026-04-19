@@ -15,7 +15,7 @@
 PROJECT=$1
 JOBNAME=$2
 BRANCHNAME=$3
-HORIZON_DIR=$4
+HORIZON_DIR=${4:-.}
 
 # WEBLATE_BRANCH: normalize for slug ( '/' -> '-' )
 WEBLATE_BRANCH=${BRANCHNAME//\//-}

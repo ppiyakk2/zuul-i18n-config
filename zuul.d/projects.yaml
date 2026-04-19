@@ -9,3 +9,15 @@
     periodic:
       jobs:
         - propose-translation-update
+
+- project:
+    name: ppiyakk2/horizon
+    check:
+      jobs:
+        - noop
+    post:
+      jobs:
+        - upstream-translation-update-horizon
+    periodic:
+      jobs:
+        - propose-translation-update-horizon
