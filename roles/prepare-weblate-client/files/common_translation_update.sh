@@ -268,6 +268,67 @@ EOF
     check_already_approved $CHANGE_ID
 }
 
+# Push branch and create/update PR on GitHub
+function push_to_github {
+    local target_branch=$1
+    local pr_branch="weblate/translations/${target_branch}"
+
+    if [ -z "$GITHUB_TOKEN" ]; then
+        echo "GITHUB_TOKEN not set — skipping push and PR creation."
+        return 0
+    fi
+    if [ -z "$GITHUB_PROJECT" ]; then
+        echo "GITHUB_PROJECT not set — skipping push and PR creation."
+        return 0
+    fi
+
+    echo ""
+    echo "=========================================="
+    echo "[github] Pushing to ${GITHUB_PROJECT} branch ${pr_branch}"
+    echo "=========================================="
+
+    # Set remote URL with token for push access
+    git remote set-url origin \
+        "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_PROJECT}.git"
+
+    # Force-push proposals branch to the PR branch
+    git push -f origin "proposals:refs/heads/${pr_branch}"
+    echo "  Pushed to ${pr_branch}"
+
+    # Check for existing open PR
+    local existing_pr
+    existing_pr=$(curl -s \
+        -H "Authorization: token $GITHUB_TOKEN" \
+        -H "Accept: application/vnd.github.v3+json" \
+        "https://api.github.com/repos/${GITHUB_PROJECT}/pulls?head=${GITHUB_PROJECT%%/*}:${pr_branch}&base=${target_branch}&state=open" | \
+        python3 -c "import sys,json; prs=json.load(sys.stdin); print(prs[0]['number'] if prs else '')" 2>/dev/null) || true
+
+    if [ -n "$existing_pr" ]; then
+        echo "  Existing PR #${existing_pr} updated via force-push."
+    else
+        echo "  Creating new PR..."
+        local pr_response
+        pr_response=$(curl -s -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${GITHUB_PROJECT}/pulls" \
+            -d "{
+                \"title\": \"Imported Translations from Weblate\",
+                \"body\": \"Translation update from Weblate translation platform.\",
+                \"head\": \"${pr_branch}\",
+                \"base\": \"${target_branch}\"
+            }")
+        local pr_number
+        pr_number=$(echo "$pr_response" | python3 -c "import sys,json; print(json.load(sys.stdin).get('number',''))" 2>/dev/null) || true
+        if [ -n "$pr_number" ]; then
+            echo "  Created PR #${pr_number}"
+        else
+            echo "  PR creation response: $pr_response"
+        fi
+    fi
+}
+
 # Propose patch using COMMIT_MSG
 function send_patch {
     local branch=${1:-master}
@@ -285,6 +346,9 @@ EOF
         git status
         git log --oneline -1
         echo "Translation changes committed successfully."
+
+        # Push to GitHub and create/update PR
+        push_to_github "$branch"
     else
         echo "No translation changes to commit."
     fi

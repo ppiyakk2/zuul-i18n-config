@@ -9,3 +9,5 @@
       environment:
         WEBLATE_URL: "{{ weblate_api_credentials.url }}"
         WEBLATE_TOKEN: "{{ weblate_api_credentials.token }}"
+        GITHUB_TOKEN: "{{ github_credentials.token }}"
+        GITHUB_PROJECT: "{{ zuul.project.name }}"

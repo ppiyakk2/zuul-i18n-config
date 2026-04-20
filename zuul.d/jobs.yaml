@@ -34,6 +34,8 @@
     secrets:
       - name: weblate_api_credentials
         secret: weblate_api_credentials
+      - name: github_credentials
+        secret: github_credentials
 
 - job:
     name: upstream-translation-update-horizon
@@ -62,3 +64,5 @@
     secrets:
       - name: weblate_api_credentials
         secret: weblate_api_credentials
+      - name: github_credentials
+        secret: github_credentials
