@@ -100,7 +100,9 @@ def pot_to_component_slug(pot_file, pot_dir):
         locale_idx = parts.index("locale")
         # Check if it's a Django module pattern: <module>/locale/<domain>.pot
         # vs doc pattern: <something>/source/locale/<name>.pot
-        if locale_idx >= 1 and (locale_idx < 2 or parts[locale_idx - 1] != "source"):
+        if (locale_idx >= 1
+                and (locale_idx < 2
+                     or parts[locale_idx - 1] != "source")):
             module = parts[locale_idx - 1]
             module_slug = module.replace("_", "-")
             return f"{module_slug}-{domain}"
@@ -149,7 +151,8 @@ def main():
     category_slug = slugify_branch(args.category)
 
     # Collect POT files
-    pot_files = sorted(glob.glob(os.path.join(args.pot_dir, "**", "*.pot"), recursive=True))
+    pot_pattern = os.path.join(args.pot_dir, "**", "*.pot")
+    pot_files = sorted(glob.glob(pot_pattern, recursive=True))
     if not pot_files:
         print(f"[upload] No POT files found in {args.pot_dir}")
         sys.exit(0)

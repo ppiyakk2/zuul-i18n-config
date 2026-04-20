@@ -42,13 +42,17 @@ def component_to_target(comp_slug):
     This is the reverse of upload_pot_weblate.py's pot_to_component_slug().
 
     Django modules:
-        horizon-django              -> (horizon/locale, django.po)
-        openstack-dashboard-djangojs -> (openstack_dashboard/locale, djangojs.po)
+        horizon-django       -> (horizon/locale, django.po)
+        openstack-dashboard-djangojs
+            -> (openstack_dashboard/locale, djangojs.po)
     Releasenotes:
-        releasenotes                -> (releasenotes/source/locale, releasenotes.po)
+        releasenotes -> (releasenotes/source/locale,
+                         releasenotes.po)
     Doc components:
-        doc                         -> (doc/source/locale, doc.po)
-        doc-code-and-documentation  -> (doc/source/locale, doc-code-and-documentation.po)
+        doc          -> (doc/source/locale, doc.po)
+        doc-code-and-documentation
+            -> (doc/source/locale,
+                doc-code-and-documentation.po)
     """
     # Django module pattern: {module}-(django|djangojs)
     m = re.match(r'^(.+)-(django|djangojs)$', comp_slug)
@@ -60,10 +64,16 @@ def component_to_target(comp_slug):
 
     # Releasenotes
     if comp_slug == "releasenotes":
-        return os.path.join("releasenotes", "source", "locale"), "releasenotes.po"
+        return (
+            os.path.join("releasenotes", "source", "locale"),
+            "releasenotes.po",
+        )
 
-    # Doc components (default): doc, doc-admin, doc-code-and-documentation, etc.
-    return os.path.join("doc", "source", "locale"), f"{comp_slug}.po"
+    # Doc components (default): doc, doc-admin, etc.
+    return (
+        os.path.join("doc", "source", "locale"),
+        f"{comp_slug}.po",
+    )
 
 
 def list_translations(setup, project_slug, comp_path):
@@ -73,7 +83,10 @@ def list_translations(setup, project_slug, comp_path):
     while path:
         resp = setup._get(path)
         if resp.status_code != 200:
-            print(f"  [warn] list translations failed: HTTP {resp.status_code}")
+            print(
+                f"  [warn] list translations failed: "
+                f"HTTP {resp.status_code}"
+            )
             break
         data = resp.json()
         for t in data.get("results", []):
@@ -103,7 +116,10 @@ def download_po(setup, project_slug, comp_path, language, output_file):
             f.write(resp.content)
         return True
     else:
-        print(f"  [warn] download failed for {language}: HTTP {resp.status_code}")
+        print(
+            f"  [warn] download failed for {language}: "
+            f"HTTP {resp.status_code}"
+        )
         return False
 
 
@@ -112,8 +128,14 @@ def main():
         description="Download translations from Weblate"
     )
     parser.add_argument("--config", default="~/.config/weblate")
-    parser.add_argument("--project", required=True, help="Weblate project slug")
-    parser.add_argument("--category", required=True, help="Branch name (e.g., master)")
+    parser.add_argument(
+        "--project", required=True,
+        help="Weblate project slug",
+    )
+    parser.add_argument(
+        "--category", required=True,
+        help="Branch name (e.g., master)",
+    )
     args = parser.parse_args()
 
     config_path = os.path.expanduser(args.config)
@@ -171,7 +193,10 @@ def main():
 
             for lang in languages:
                 temp_file = os.path.join(work_dir, f"{slug}_{lang}.po")
-                if download_po(setup, project_slug, comp_path, lang, temp_file):
+                if download_po(
+                    setup, project_slug, comp_path,
+                    lang, temp_file,
+                ):
                     target_dir = os.path.join(
                         target_base, lang, "LC_MESSAGES"
                     )

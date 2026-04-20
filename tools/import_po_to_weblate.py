@@ -11,8 +11,10 @@ Usage:
         --category master \
         --po-dir doc/source/locale
 
-PO files are expected at: <po-dir>/<lang>/LC_MESSAGES/<component>.po
-The component slug is derived from the PO filename (e.g., doc-common.po -> doc-common).
+PO files are expected at:
+    <po-dir>/<lang>/LC_MESSAGES/<component>.po
+The component slug is derived from the PO filename
+(e.g., doc-common.po -> doc-common).
 """
 
 import argparse
@@ -26,11 +28,14 @@ sys.path.insert(0, os.path.join(
     os.path.dirname(__file__), "..", "roles",
     "prepare-weblate-client", "files"))
 
-from setup_weblate_project import SimpleIniConfig, WeblateSetup, slugify_branch
+from setup_weblate_project import SimpleIniConfig, WeblateSetup, slugify_branch  # noqa: E402
 
 
 def find_po_files(po_dir):
-    """Find all PO files and return list of (lang, component_slug, filepath)."""
+    """Find all PO files.
+
+    Returns list of (lang, component_slug, filepath).
+    """
     results = []
     pattern = os.path.join(po_dir, "*/LC_MESSAGES/*.po")
     for path in sorted(glob.glob(pattern)):
@@ -45,8 +50,13 @@ def find_po_files(po_dir):
     return results
 
 
-def ensure_translation(setup, project_slug, category_slug, comp_slug, language):
-    """Ensure a translation (language) exists for a component. Create if missing."""
+def ensure_translation(
+    setup, project_slug, category_slug, comp_slug, language,
+):
+    """Ensure a translation exists for a component.
+
+    Create if missing.
+    """
     comp_path = f"{category_slug}%252F{comp_slug}"
     url = setup._api_url(
         f"translations/{project_slug}/{comp_path}/{language}/"
@@ -68,14 +78,20 @@ def ensure_translation(setup, project_slug, category_slug, comp_slug, language):
     if resp.status_code in (200, 201):
         return True
     else:
-        print(f"  [{language}] failed to add language: HTTP {resp.status_code} — {resp.text[:200]}")
+        print(f"  [{language}] failed to add language: "
+              f"HTTP {resp.status_code} — {resp.text[:200]}")
         return False
 
 
-def upload_po(setup, project_slug, category_slug, comp_slug, language, po_file):
+def upload_po(
+    setup, project_slug, category_slug,
+    comp_slug, language, po_file,
+):
     """Upload a PO file to Weblate."""
-    # Ensure the language exists in the component
-    if not ensure_translation(setup, project_slug, category_slug, comp_slug, language):
+    if not ensure_translation(
+        setup, project_slug, category_slug,
+        comp_slug, language,
+    ):
         return False
 
     comp_path = f"{category_slug}%252F{comp_slug}"
@@ -87,7 +103,12 @@ def upload_po(setup, project_slug, category_slug, comp_slug, language, po_file):
         "Authorization": setup.headers["Authorization"],
     }
     with open(po_file, "rb") as f:
-        files = {"file": (os.path.basename(po_file), f, "application/x-gettext")}
+        files = {
+            "file": (
+                os.path.basename(po_file), f,
+                "application/x-gettext",
+            ),
+        }
         data = {"method": "replace"}
         resp = requests.post(
             url, headers=headers, files=files, data=data,
@@ -99,19 +120,37 @@ def upload_po(setup, project_slug, category_slug, comp_slug, language, po_file):
         accepted = result.get("accepted", 0)
         total = result.get("total", 0)
         skipped = result.get("skipped", 0)
-        print(f"  [{language}] OK (accepted: {accepted}, skipped: {skipped}, total: {total})")
+        print(
+            f"  [{language}] OK "
+            f"(accepted: {accepted}, "
+            f"skipped: {skipped}, total: {total})"
+        )
         return True
     else:
-        print(f"  [{language}] FAILED: HTTP {resp.status_code} — {resp.text[:200]}")
+        print(
+            f"  [{language}] FAILED: "
+            f"HTTP {resp.status_code} — "
+            f"{resp.text[:200]}"
+        )
         return False
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Import PO files into Weblate")
-    parser.add_argument("--config", default="~/.config/weblate")
+    parser = argparse.ArgumentParser(
+        description="Import PO files into Weblate",
+    )
+    parser.add_argument(
+        "--config", default="~/.config/weblate",
+    )
     parser.add_argument("--project", required=True)
-    parser.add_argument("--category", required=True, help="Branch name (e.g., master)")
-    parser.add_argument("--po-dir", required=True, help="Directory containing locale/<lang>/LC_MESSAGES/*.po")
+    parser.add_argument(
+        "--category", required=True,
+        help="Branch name (e.g., master)",
+    )
+    parser.add_argument(
+        "--po-dir", required=True,
+        help="Directory with locale/<lang>/LC_MESSAGES/*.po",
+    )
     args = parser.parse_args()
 
     config_path = os.path.expanduser(args.config)
@@ -129,7 +168,10 @@ def main():
     for lang, comp_slug, path in po_files:
         by_comp.setdefault(comp_slug, []).append((lang, path))
 
-    print(f"Found {len(po_files)} PO file(s) across {len(by_comp)} component(s)")
+    print(
+        f"Found {len(po_files)} PO file(s) "
+        f"across {len(by_comp)} component(s)"
+    )
     print(f"Project: {args.project}, Category: {category_slug}\n")
 
     ok = 0
@@ -137,7 +179,10 @@ def main():
     for comp_slug in sorted(by_comp):
         print(f"--- {comp_slug} ---")
         for lang, path in sorted(by_comp[comp_slug]):
-            if upload_po(setup, args.project, category_slug, comp_slug, lang, path):
+            if upload_po(
+                setup, args.project, category_slug,
+                comp_slug, lang, path,
+            ):
                 ok += 1
             else:
                 fail += 1
