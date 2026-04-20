@@ -8,3 +8,4 @@
       sphinx_python: python3
     - ensure-babel
     - prepare-weblate-client
+    - prepare-upper-constraints

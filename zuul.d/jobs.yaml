@@ -57,7 +57,7 @@
     description: |
       Download translations from Weblate and propose a PR
       to the horizon repository.
-    pre-run: playbooks/propose-translation-update-horizon/pre.yaml
+    pre-run: playbooks/propose-translation-update/pre.yaml
     run: playbooks/propose-translation-update/run.yaml
     required-projects:
       - <your-org>/horizon
