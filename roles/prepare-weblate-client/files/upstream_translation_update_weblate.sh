@@ -56,25 +56,9 @@ echo "  WEBLATE_BASE_URL=$WEBLATE_BASE_URL"
 # Check if the Weblate project exists and is not locked (via Python)
 weblate_project_check_or_skip() {
   local result
-  result=$(PYTHONPATH="$SCRIPTSDIR" python3 -c "
-from setup_weblate_project import SimpleIniConfig, WeblateSetup
-import os, sys
-
-wconfig = SimpleIniConfig(os.path.expanduser('~/.config/weblate'))
-setup = WeblateSetup(wconfig)
-
-resp = setup.get_project('${WEBLATE_PROJECT}')
-if resp.status_code != 200:
-    print('UNAVAILABLE:' + str(resp.status_code))
-    sys.exit(0)
-
-data = resp.json()
-if data.get('locked', False):
-    print('LOCKED')
-    sys.exit(0)
-
-print('OK')
-" 2>&1) || true
+  result=$(PYTHONPATH="$SCRIPTSDIR" python3 "$SCRIPTSDIR/check_weblate_project.py" \
+      --config ~/.config/weblate \
+      --project "${WEBLATE_PROJECT}" 2>&1) || true
 
   echo "  Project check result: $result"
 
