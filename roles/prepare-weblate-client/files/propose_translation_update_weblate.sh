@@ -61,7 +61,7 @@ download_translation() {
     local output_file=$4
 
     curl -q -s --config ~/.curlrc \
-        "$WEBLATE_URL/api/translations/$project/$component/$language/file/" \
+        "$WEBLATE_URL/translations/$project/$component/$language/file/" \
         -o "$output_file"
     [ $? -eq 0 ] && [ -s "$output_file" ]
 }
@@ -77,7 +77,7 @@ process_translations() {
     local languages
     set +e
     languages=$(curl -q -s --config ~/.curlrc \
-        "$WEBLATE_URL/api/components/$project/$component/translations/" | \
+        "$WEBLATE_URL/components/$project/$component/translations/" | \
         jq -r '.results[] | select(.language.code != "en") |
         .language.code' 2>/dev/null)
     set -e
@@ -110,7 +110,7 @@ process_translations() {
 }
 
 components=$(curl -q -s --config ~/.curlrc \
-    "$WEBLATE_URL/api/projects/$project/components/" | \
+    "$WEBLATE_URL/projects/$project/components/" | \
     jq -r '.results[].slug' 2>/dev/null)
 
 if [[ -z "$components" ]]; then
