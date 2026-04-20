@@ -10,3 +10,17 @@
         WEBLATE_TOKEN: "{{ weblate_api_credentials.token }}"
         GITHUB_TOKEN: "{{ github_credentials.token }}"
         GITHUB_PROJECT: "{{ zuul.project.name }}"
+      register: script_result
+      ignore_errors: true
+
+    - name: Show script output
+      debug:
+        msg: |
+          rc={{ script_result.rc }}
+          stdout={{ script_result.stdout }}
+          stderr={{ script_result.stderr }}
+
+    - name: Fail if script failed
+      fail:
+        msg: "propose script failed with rc={{ script_result.rc }}"
+      when: script_result.rc != 0
