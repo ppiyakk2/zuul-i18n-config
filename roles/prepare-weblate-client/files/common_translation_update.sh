@@ -739,6 +739,18 @@ function compress_po_files {
     done
 }
 
+# Run obsolete-file cleanup + POT removal + PO compression for a module.
+# Order matters: cleanup_po_files relies on raw untranslated counts via
+# check_po_file, so it must precede compress_po_files which strips
+# untranslated entries.
+function cleanup_module {
+    local modulename=$1
+
+    cleanup_po_files "$modulename"
+    cleanup_pot_files "$modulename"
+    compress_po_files "$modulename"
+}
+
 function pull_from_weblate {
     local project=$1
 
