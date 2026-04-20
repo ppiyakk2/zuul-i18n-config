@@ -1,9 +1,8 @@
 - name: Propose Translation Updates
-  hosts: localhost
-  connection: local
+  hosts: all
   tasks:
     - name: Run propose_translation_update_weblate.sh script
-      command: "{{ ansible_user_dir }}/scripts/propose_translation_update_weblate.sh {{ zuul.project.short_name }} {{ zuul.branch }} {{ zuul.job }}"
+      shell: "{{ ansible_user_dir }}/scripts/propose_translation_update_weblate.sh {{ zuul.project.short_name }} {{ zuul.branch }} {{ zuul.job }}"
       args:
         chdir: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
       environment:
