@@ -49,3 +49,4 @@
     - propose_translation_update_weblate.sh
     - upload_pot_weblate.py
     - setup_weblate_project.py
+    - download_translations_weblate.py

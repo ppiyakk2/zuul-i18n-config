@@ -2,10 +2,7 @@
   hosts: all
   tasks:
     - name: Run propose_translation_update_weblate.sh script
-      shell: |
-        {{ ansible_user_dir }}/scripts/propose_translation_update_weblate.sh \
-          {{ zuul.project.short_name }} {{ zuul.branch }} {{ zuul.job }} \
-          > /tmp/propose-output.txt 2>&1
+      shell: "{{ ansible_user_dir }}/scripts/propose_translation_update_weblate.sh {{ zuul.project.short_name }} {{ zuul.branch }}"
       args:
         chdir: "{{ ansible_user_dir }}/{{ zuul.project.src_dir }}"
       environment:
@@ -13,18 +10,3 @@
         WEBLATE_TOKEN: "{{ weblate_api_credentials.token }}"
         GITHUB_TOKEN: "{{ github_credentials.token }}"
         GITHUB_PROJECT: "{{ zuul.project.name }}"
-      register: script_result
-      ignore_errors: true
-
-    - name: Show script output from file
-      shell: cat /tmp/propose-output.txt
-      register: file_output
-
-    - name: Display output
-      debug:
-        msg: "{{ file_output.stdout_lines }}"
-
-    - name: Fail if script failed
-      fail:
-        msg: "propose script failed with rc={{ script_result.rc }}"
-      when: script_result.rc != 0

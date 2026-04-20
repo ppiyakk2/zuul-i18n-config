@@ -297,7 +297,7 @@ function push_to_github {
 
     # Check for existing open PR
     local existing_pr
-    existing_pr=$(curl -s \
+    existing_pr=$(curl -q -s \
         -H "Authorization: token $GITHUB_TOKEN" \
         -H "Accept: application/vnd.github.v3+json" \
         "https://api.github.com/repos/${GITHUB_PROJECT}/pulls?head=${GITHUB_PROJECT%%/*}:${pr_branch}&base=${target_branch}&state=open" | \
@@ -308,7 +308,7 @@ function push_to_github {
     else
         echo "  Creating new PR..."
         local pr_response
-        pr_response=$(curl -s -X POST \
+        pr_response=$(curl -q -s -X POST \
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
             -H "Content-Type: application/json" \
