@@ -22,6 +22,9 @@ project=$1
 branch=${2:-"master"}
 PROJECT=$project
 WEBLATE_BRANCH=${branch//\//-}
+# install_horizon expects HORIZON_DIR to locate the horizon source tree;
+# propose runs cd'd to the repo root, so default to current directory.
+HORIZON_DIR=${HORIZON_DIR:-.}
 
 
 # ---------------------------------------------------------------
