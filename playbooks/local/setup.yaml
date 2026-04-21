@@ -1,0 +1,16 @@
+---
+# Invoked by tools/local/lib/provision-ubuntu.sh via
+#   ansible-playbook -i localhost, -c local playbooks/local/setup.yaml
+# Re-uses the same roles Zuul pre-run does, so local env matches Zuul.
+- name: Prepare local translation environment
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+    - role: ensure-sphinx
+      doc_building_packages:
+        - sphinx
+        - reno
+      sphinx_python: python3
+    - ensure-babel
+    - prepare-weblate-client

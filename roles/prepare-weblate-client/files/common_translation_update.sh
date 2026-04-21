@@ -271,7 +271,7 @@ EOF
 # Push branch and create/update PR on GitHub
 function push_to_github {
     local target_branch=$1
-    local pr_branch="weblate/translations/${target_branch}"
+    local pr_branch="weblate/translations/${target_branch}${LOCAL_TEST_BRANCH_SUFFIX:-}"
 
     if [ -z "$GITHUB_TOKEN" ]; then
         echo "GITHUB_TOKEN not set — skipping push and PR creation."

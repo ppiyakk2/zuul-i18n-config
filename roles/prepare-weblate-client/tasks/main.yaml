@@ -20,15 +20,6 @@
     mode: "0600"
   no_log: true
 
-# --- Weblate API curl config ---
-- name: Write curlrc for Weblate API authentication
-  copy:
-    dest: "{{ ansible_user_dir }}/.curlrc"
-    content: |
-      header = "Authorization: Token {{ weblate_api_credentials.token }}"
-    mode: "0600"
-  no_log: true
-
 # --- Translation scripts ---
 - name: Ensure scripts directory exists
   file:

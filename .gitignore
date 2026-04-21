@@ -1,2 +1,4 @@
 __pycache__/
 .claude/
+tools/local/.env.local
+tools/local/.state/
