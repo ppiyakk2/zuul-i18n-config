@@ -36,9 +36,18 @@ run_ansible_roles() {
     log "running ansible-playbook -c local against ${PLAYBOOK}"
     # --roles-path: Zuul auto-sets ANSIBLE_ROLES_PATH, we need to point
     # at the repo's roles/ dir explicitly when running outside Zuul.
+    # Pass credentials as JSON so Ansible sees a real dict (the shell
+    # "key={a: b}" form is parsed as a string by ansible-playbook -e).
+    local vars_json
+    vars_json=$(python3 -c "import json, os; print(json.dumps({
+        'weblate_api_credentials': {
+            'url': os.environ['WEBLATE_URL'],
+            'token': os.environ['WEBLATE_TOKEN'],
+        }
+    }))")
     ANSIBLE_ROLES_PATH="${REPO_ROOT}/roles" \
     ansible-playbook -i localhost, -c local \
-        -e "weblate_api_credentials={url: '${WEBLATE_URL}', token: '${WEBLATE_TOKEN}'}" \
+        -e "${vars_json}" \
         "${PLAYBOOK}"
 }
 
