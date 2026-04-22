@@ -34,6 +34,9 @@ install_apt_packages() {
 run_ansible_roles() {
     [ -f "${PLAYBOOK}" ] || die "missing ${PLAYBOOK}"
     log "running ansible-playbook -c local against ${PLAYBOOK}"
+    # --roles-path: Zuul auto-sets ANSIBLE_ROLES_PATH, we need to point
+    # at the repo's roles/ dir explicitly when running outside Zuul.
+    ANSIBLE_ROLES_PATH="${REPO_ROOT}/roles" \
     ansible-playbook -i localhost, -c local \
         -e "weblate_api_credentials={url: '${WEBLATE_URL}', token: '${WEBLATE_TOKEN}'}" \
         "${PLAYBOOK}"
