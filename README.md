@@ -159,7 +159,18 @@ propose_translation_update_weblate.sh PROJECT [BRANCH]
 
 ### 처음부터 새 환경을 구축하려면
 
-[`docs/zuul-server-bootstrap.md`](docs/zuul-server-bootstrap.md) 와 [`docs/github-app-setup.md`](docs/github-app-setup.md) 가 단계별 절차를 다룬다. 부트스트랩에 필요한 파일(docker-compose, ZK CA 스크립트, 설정 템플릿, graphql 패치 등)은 [`bootstrap/`](bootstrap/) 디렉토리에 그대로 들어 있다.
+**원클릭 방법** (devstack 스타일):
+
+```bash
+git clone <this-repo> && cd zuul-i18n-config
+cp local.conf.sample local.conf
+$EDITOR local.conf                  # 사이트 값 (Zuul/Worker IP, GitHub App, 토큰 등) 입력
+./stack.sh                          # = ./stack.sh up
+```
+
+[`stack.sh`](stack.sh) 가 Docker 설치 → ZK CA / SSH 키 생성 → 설정 템플릿 렌더링 → 워커 노드 프로비저닝 → `docker compose up` → 자격증명 암호화까지 전부 처리하며, 멱등하게 재실행 가능하다 (이미 만들어진 단계는 자동 skip). 자세한 변수 설명은 [`local.conf.sample`](local.conf.sample) 와 [`docs/zuul-server-bootstrap.md`](docs/zuul-server-bootstrap.md) §"One-command bootstrap" 참조.
+
+**수동 절차** (학습/디버깅용): [`docs/zuul-server-bootstrap.md`](docs/zuul-server-bootstrap.md) 와 [`docs/github-app-setup.md`](docs/github-app-setup.md). 부트스트랩에 필요한 파일(docker-compose, ZK CA 스크립트, 설정 템플릿, graphql 패치 등)은 [`bootstrap/`](bootstrap/) 디렉토리에 들어 있다.
 
 ### Zuul 컨테이너 구성
 
@@ -510,7 +521,8 @@ curl -s "http://<ZUUL_HOST_IP>:8088/<build-uuid>/job-output.txt"
 
 ### 내부 문서
 
-- [`docs/zuul-server-bootstrap.md`](docs/zuul-server-bootstrap.md) — **새 Zuul 환경을 처음부터 구축하는 절차**
+- [`stack.sh`](stack.sh) + [`local.conf.sample`](local.conf.sample) — **원클릭 부트스트랩 스크립트** (devstack 스타일)
+- [`docs/zuul-server-bootstrap.md`](docs/zuul-server-bootstrap.md) — `stack.sh` 의 각 단계를 풀어서 설명한 매뉴얼 절차 (학습/디버깅용)
 - [`docs/github-app-setup.md`](docs/github-app-setup.md) — GitHub App 생성 / 권한 / 설치 / 재사용 가이드
 - [`bootstrap/`](bootstrap/) — Zuul 서버용 docker-compose, ZK CA 스크립트, 설정 템플릿, graphql 패치
 - [`docs/manual/`](docs/manual/) — Zuul 8장 교재 (개요, 아키텍처, 설정, 잡 실행, playbook, nodepool, secrets, 번역 파이프라인)

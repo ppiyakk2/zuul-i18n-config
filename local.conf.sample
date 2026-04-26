@@ -1,0 +1,50 @@
+# local.conf — site-specific values for ./stack.sh
+#
+# Copy to local.conf and edit. local.conf is gitignored.
+#
+#   cp local.conf.sample local.conf
+#   $EDITOR local.conf
+#   ./stack.sh
+
+# === Zuul host (where the docker-compose stack runs) ===========================
+ZUUL_HOST_IP=                              # Public IP/hostname, e.g. <ZUUL_HOST_IP>
+ZUUL_HOST_USER=ubuntu
+ZUUL_HOST_SSH_KEY=~/.ssh/id_rsa            # Private key for SSH'ing in as $ZUUL_HOST_USER
+
+# === Worker node (where Ansible jobs actually run) =============================
+WORKER_HOST_IP=                            # Public IP for the operator (you) to SSH from your laptop
+WORKER_INTERNAL_IP=                        # IP reachable from the Zuul host (use the VPC IP if both are on the same private network)
+WORKER_USER=ubuntu
+WORKER_SSH_KEY=~/.ssh/id_rsa
+# Set SKIP_WORKER=1 if you only want to bring the Zuul stack up and will provision the worker separately.
+SKIP_WORKER=0
+
+# === GitHub App ================================================================
+# Create per docs/github-app-setup.md and download the .pem.
+GITHUB_APP_ID=                             # e.g. <GITHUB_APP_ID>
+GITHUB_APP_PEM=~/Downloads/github_app.pem  # Local path to the App's private key
+GITHUB_WEBHOOK_TOKEN=                      # The webhook secret you set when creating the App
+
+# === Tenant + projects =========================================================
+TENANT_NAME=                               # e.g. i18n-test
+CONFIG_PROJECT=                            # org/repo of your DEDICATED config-project fork (single-branch). e.g. <your-org>/zuul-i18n-config
+CONFIG_PROJECT_BRANCH=main
+
+# YAML fragment listing untrusted-projects (the source repos that trigger jobs).
+# Indent with 10 spaces (already correct in this template). Use `include: []` to
+# ignore in-tree .zuul.yaml.
+UNTRUSTED_PROJECTS_YAML='          - org/source-repo-a
+          - org/source-repo-b:
+              include: []'
+
+# === Zuul auth =================================================================
+# HS256 secret used by `zuul create-auth-token` (REST API enqueue). Random by default.
+ZUUL_OPERATOR_SECRET=$(openssl rand -hex 32 2>/dev/null || echo "change-me-$(date +%s)")
+
+# === Optional: plaintext secrets to encrypt at the end =========================
+# stack.sh will produce ready-to-paste encrypted blocks for these. Leave any value
+# empty to skip. The encrypted output is saved to ./local-secrets.yaml — you must
+# manually copy it into your config-project's zuul.d/secrets.yaml and push.
+WEBLATE_API_URL=
+WEBLATE_API_TOKEN=
+GITHUB_PAT=

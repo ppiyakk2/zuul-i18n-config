@@ -6,6 +6,40 @@ end-to-end. The artefacts referenced here live in [`bootstrap/`](../bootstrap/).
 The reference test environment was built with these steps; the existing
 `<ZUUL_HOST_IP>` server is identical to what this document produces.
 
+## One-command bootstrap (recommended)
+
+Once the prerequisites in "[What you need before starting](#what-you-need-before-starting)"
+are in place, the entire procedure collapses to:
+
+```bash
+cp local.conf.sample local.conf      # at the repo root
+$EDITOR local.conf                   # fill in IPs, App credentials, tenant, projects
+./stack.sh                           # idempotent — safe to re-run
+```
+
+`stack.sh` orchestrates everything described in the manual procedure below.
+Subcommands:
+
+| Command | Effect |
+|---------|--------|
+| `./stack.sh` (or `up`) | Full bootstrap: Docker → certs/keys → configs → worker → `docker compose up` → secret encryption |
+| `./stack.sh down` | `docker compose down -v` (DESTRUCTIVE — wipes ZK + DB volumes; secrets must be re-encrypted on next `up`) |
+| `./stack.sh status` | Container health + `/api/tenants` |
+| `./stack.sh encrypt-secrets` | Re-emit `local-secrets.yaml` from current plaintext values in `local.conf` (after the stack is up) |
+
+The script never pushes commits to your config-project — it only emits an
+encrypted `local-secrets.yaml` for you to paste into your fork's
+`zuul.d/secrets.yaml` and push manually (so a runaway `stack.sh` cannot
+overwrite real production secrets).
+
+The rest of this document explains each phase in detail; read on if you want
+to understand what `stack.sh` is doing, debug failures, or run individual
+phases by hand.
+
+---
+
+## Manual procedure (for understanding/debugging)
+
 ## What you need before starting
 
 | Resource | Notes |
