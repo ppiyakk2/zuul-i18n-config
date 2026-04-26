@@ -1,0 +1,63 @@
+[zookeeper]
+hosts=zk:2281
+tls_cert=/var/certs/certs/client.pem
+tls_key=/var/certs/keys/clientkey.pem
+tls_ca=/var/certs/certs/cacert.pem
+
+[keystore]
+# Used to encrypt project private keys at rest in ZooKeeper.
+# Change for production deployments.
+password=secret
+
+[scheduler]
+log_config=/etc/zuul/logging.conf
+tenant_config=/etc/zuul/main.yaml
+
+[connection "github.com"]
+driver=github
+server=github.com
+# Replace with values from your GitHub App (see docs/github-app-setup.md).
+app_id=<GITHUB_APP_ID>
+app_key=/etc/zuul/github_app.pem
+webhook_token=<GITHUB_WEBHOOK_TOKEN>
+# Allow Zuul to monitor forks (required because our config-project is a fork).
+exclude_forks=false
+
+[connection "opendev.org"]
+driver=git
+baseurl=https://opendev.org
+
+[database]
+# MariaDB credentials must match docker-compose.yaml.
+dburi=mariadb+pymysql://zuul:%(ZUUL_MYSQL_PASSWORD)s@mysql/zuul
+
+[web]
+listen_address=0.0.0.0
+port=9000
+# Replace <ZUUL_HOST_IP> with the public IP/hostname of this Zuul server.
+root=http://<ZUUL_HOST_IP>:9000
+log_url=http://<ZUUL_HOST_IP>:8088/
+
+[executor]
+trusted_rw_paths=/srv/static/logs
+private_key_file=/var/ssh/nodepool_rsa
+default_username=root
+
+[auth zuul_operator]
+# HS256 secret used to sign REST API auth tokens (`zuul create-auth-token`).
+# MUST be changed for production. Treat as a credential.
+driver=HS256
+allow_authz_override=true
+realm=zuul.example.com
+client_id=zuul.example.com
+issuer_id=zuul_operator
+secret=<ZUUL_OPERATOR_SECRET>
+
+[logging]
+config=/etc/zuul/logging.conf
+
+[merger]
+git_dir=/var/lib/zuul/merger-git
+
+[webclient]
+url=http://web:9000

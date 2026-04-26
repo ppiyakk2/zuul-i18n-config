@@ -1,0 +1,140 @@
+version: '3.8'
+
+services:
+  zk:
+    image: quay.io/opendevmirror/zookeeper
+    hostname: zk
+    volumes:
+      - ./zoo.cfg:/conf/zoo.cfg:z
+      - ./certs:/var/certs:z
+      - zk-data:/data
+      - zk-datalog:/datalog
+    networks:
+      - zuul
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sf http://localhost:8080/commands/ruok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mysql:
+    image: quay.io/opendevmirror/mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: zuul
+      MYSQL_USER: zuul
+      MYSQL_PASSWORD: secret
+      MYSQL_INITDB_SKIP_TZINFO: 1
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - zuul
+    healthcheck:
+      test: ["CMD", "sh", "-c", "mariadb -u zuul -psecret -e 'SELECT 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  scheduler:
+    image: quay.io/zuul-ci/zuul-scheduler
+    depends_on:
+      zk:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    environment:
+      ZUUL_MYSQL_PASSWORD: secret
+      TZ: Asia/Seoul
+    volumes:
+      - ./etc/zuul:/etc/zuul:z
+      - ./certs:/var/certs:z
+      - ./keys:/var/ssh:z
+      - ./patches/graphql_init.py:/usr/local/lib/python3.11/site-packages/zuul/driver/github/graphql/__init__.py:z
+      - scheduler-data:/var/lib/zuul
+    command: "zuul-scheduler -f"
+    networks:
+      - zuul
+
+  executor:
+    image: quay.io/zuul-ci/zuul-executor
+    privileged: true
+    depends_on:
+      - scheduler
+    environment:
+      ZUUL_MYSQL_PASSWORD: secret
+      TZ: Asia/Seoul
+    volumes:
+      - ./etc/zuul:/etc/zuul:z
+      - ./certs:/var/certs:z
+      - ./keys:/var/ssh:z
+      - ./logs:/srv/static/logs:z
+      - ./patches/graphql_init.py:/usr/local/lib/python3.11/site-packages/zuul/driver/github/graphql/__init__.py:z
+      - executor-data:/var/lib/zuul
+    command: "zuul-executor -f --keep-jobdir"
+    networks:
+      - zuul
+
+  web:
+    image: quay.io/zuul-ci/zuul-web
+    ports:
+      - "9000:9000"
+    depends_on:
+      - scheduler
+    environment:
+      ZUUL_MYSQL_PASSWORD: secret
+      TZ: Asia/Seoul
+    volumes:
+      - ./etc/zuul:/etc/zuul:z
+      - ./certs:/var/certs:z
+      - ./patches/graphql_init.py:/usr/local/lib/python3.11/site-packages/zuul/driver/github/graphql/__init__.py:z
+      - web-data:/var/lib/zuul
+    command: "zuul-web -f"
+    networks:
+      - zuul
+
+  launcher:
+    image: quay.io/zuul-ci/nodepool-launcher
+    depends_on:
+      zk:
+        condition: service_healthy
+    volumes:
+      - ./etc/nodepool:/etc/nodepool:z
+      - ./certs:/var/certs:z
+      - launcher-data:/var/lib/nodepool
+    environment:
+      TZ: Asia/Seoul
+    command: "nodepool-launcher -f"
+    networks:
+      - zuul
+
+  node:
+    build:
+      context: ./
+      dockerfile: node-Dockerfile
+    hostname: node
+    volumes:
+      - ./keys/nodepool_rsa.pub:/tmp/nodepool_rsa.pub:ro
+    networks:
+      - zuul
+
+  log-server:
+    image: nginx:alpine
+    ports:
+      - "8088:80"
+    volumes:
+      - ./logs:/usr/share/nginx/html:ro
+      - ./etc/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - zuul
+
+volumes:
+  zk-data:
+  zk-datalog:
+  mysql-data:
+  scheduler-data:
+  executor-data:
+  web-data:
+  launcher-data:
+
+networks:
+  zuul:

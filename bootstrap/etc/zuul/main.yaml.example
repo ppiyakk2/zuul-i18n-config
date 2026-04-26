@@ -1,0 +1,16 @@
+- tenant:
+    name: <TENANT_NAME>
+    source:
+      github.com:
+        config-projects:
+          # Trusted project that defines pipelines/jobs/secrets.
+          # Use a single-branch fork dedicated to this Zuul instance — see
+          # docs/zuul-server-bootstrap.md "Why a dedicated config-project fork".
+          - <CONFIG_PROJECT>:
+              load-branch: main
+        untrusted-projects:
+          # Source projects that trigger jobs.
+          - <UNTRUSTED_PROJECT_1>
+          - <UNTRUSTED_PROJECT_2>:
+              # `include: []` ignores any in-tree .zuul.yaml in the source repo.
+              include: []

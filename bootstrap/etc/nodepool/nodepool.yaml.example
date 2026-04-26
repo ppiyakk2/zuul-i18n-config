@@ -1,0 +1,31 @@
+webapp:
+  port: 5000
+
+zookeeper-servers:
+  - host: zk
+    port: 2281
+
+zookeeper-tls:
+  cert: /var/certs/certs/client.pem
+  key: /var/certs/keys/clientkey.pem
+  ca: /var/certs/certs/cacert.pem
+
+labels:
+  - name: ubuntu-noble
+
+providers:
+  - name: static-provider
+    driver: static
+    pools:
+      - name: main
+        nodes:
+          # Replace with the worker node's IP reachable from the Zuul server
+          # (use the internal IP if both are on the same VPC).
+          - name: <WORKER_INTERNAL_IP>
+            labels:
+              - ubuntu-noble
+            host-key-checking: false
+            python-path: /usr/bin/python3
+            connection-type: ssh
+            connection-port: 22
+            username: ubuntu

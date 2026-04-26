@@ -1,0 +1,30 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    openssh-server \
+    python3 python3-pip \
+    git \
+    gettext \
+    && rm -rf /var/lib/apt/lists/*
+
+# pip 패키지: i18n 도구
+RUN pip3 install --break-system-packages \
+    Babel \
+    sphinx \
+    sphinx-intl \
+    wlc \
+    2>/dev/null || pip3 install Babel sphinx sphinx-intl wlc
+
+RUN mkdir -p /root/.ssh /var/run/sshd
+RUN chmod 700 /root/.ssh
+
+# SSH 설정
+RUN echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config && \
+    echo 'PasswordAuthentication no' >> /etc/ssh/sshd_config
+
+EXPOSE 22
+
+# authorized_keys는 docker-compose에서 마운트
+ENTRYPOINT ["/bin/sh", "-c", "cp /tmp/nodepool_rsa.pub /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys && exec /usr/sbin/sshd -D"]
