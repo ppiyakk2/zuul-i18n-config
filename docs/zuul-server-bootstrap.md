@@ -161,20 +161,24 @@ you didn't already.)
 
 Replace placeholders. Each placeholder appears in exactly one file:
 
+Each placeholder appears in exactly one file. Substitute with your real
+values (the examples below use RFC 5737 documentation addresses and a
+fake App ID — replace with yours):
+
 ```bash
 # zuul.conf
-sed -i 's|<ZUUL_HOST_IP>|<ZUUL_HOST_IP>|g'        zuul/zuul.conf
-sed -i 's|<GITHUB_APP_ID>|<GITHUB_APP_ID>|'                zuul/zuul.conf
+sed -i 's|<ZUUL_HOST_IP>|203.0.113.10|g'           zuul/zuul.conf
+sed -i 's|<GITHUB_APP_ID>|123456|'                 zuul/zuul.conf
 sed -i 's|<GITHUB_WEBHOOK_TOKEN>|change-me|'       zuul/zuul.conf
 sed -i 's|<ZUUL_OPERATOR_SECRET>|change-this-too|' zuul/zuul.conf
 
 # main.yaml
 sed -i 's|<TENANT_NAME>|i18n-test|'                zuul/main.yaml
-sed -i 's|<CONFIG_PROJECT>|<your-org>/zuul-i18n-config|' zuul/main.yaml
+sed -i 's|<CONFIG_PROJECT>|your-org/zuul-i18n-config|' zuul/main.yaml
 # Hand-edit the `<UNTRUSTED_PROJECT_*>` lines.
 
 # nodepool.yaml
-sed -i 's|<WORKER_INTERNAL_IP>|<WORKER_INTERNAL_IP>|'      nodepool/nodepool.yaml
+sed -i 's|<WORKER_INTERNAL_IP>|192.0.2.20|'        nodepool/nodepool.yaml
 ```
 
 > **Production:** also change `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD`,
