@@ -18,7 +18,7 @@
     pre-run: playbooks/upstream-translation-update/pre.yaml
     run: playbooks/upstream-translation-update/run.yaml
     required-projects:
-      - <your-org>/contributor-guide
+      - ppiyakk2/contributor-guide
     secrets:
       - name: weblate_api_credentials
         secret: weblate_api_credentials
@@ -46,7 +46,7 @@
     pre-run: playbooks/upstream-translation-update-horizon/pre.yaml
     run: playbooks/upstream-translation-update/run.yaml
     required-projects:
-      - <your-org>/horizon
+      - ppiyakk2/horizon
     secrets:
       - name: weblate_api_credentials
         secret: weblate_api_credentials
@@ -60,7 +60,7 @@
     pre-run: playbooks/propose-translation-update/pre.yaml
     run: playbooks/propose-translation-update/run.yaml
     required-projects:
-      - <your-org>/horizon
+      - ppiyakk2/horizon
     secrets:
       - name: weblate_api_credentials
         secret: weblate_api_credentials

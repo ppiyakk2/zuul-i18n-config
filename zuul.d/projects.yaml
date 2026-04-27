@@ -1,5 +1,5 @@
 - project:
-    name: <your-org>/contributor-guide
+    name: ppiyakk2/contributor-guide
     check:
       jobs:
         - noop
@@ -11,7 +11,7 @@
         - propose-translation-update
 
 - project:
-    name: <your-org>/horizon
+    name: ppiyakk2/horizon
     check:
       jobs:
         - noop
